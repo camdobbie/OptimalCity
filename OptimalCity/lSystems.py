@@ -137,7 +137,7 @@ def productionRulesCity(node, useIntersectionRule, intersectRadius=None):
     elif G.nodes[node]['nodeType'] == 'mL':
         aAngle = random.uniform(-0.1,0.1)
         aLength = 2
-        createNodes(node,'mK',aAngle,aLength,'mL', useIntersectionRule=useIntersectionRule, intersectRadius=intersectRadius,weight=1)
+        createNodes(node,'mK',aAngle,aLength,'mL', useIntersectionRule=useIntersectionRule, intersectRadius=intersectRadius,weight=0.5)
 
 
 production_rules = {
@@ -146,7 +146,7 @@ production_rules = {
     'ruleCity': productionRulesCity
 }
 
-def generateCity(iterations, rule, useIntersectionRule=True, intersectRadius=None, seed=None, plotType="Map", showNodes = False, labelType = None):
+def generateCity(iterations, rule, useIntersectionRule=True, intersectRadius=None, seed=None, plotType="Map", showNodes = False, nodeLabelType = None, edgeLabelType = None):
 
     random.seed(seed)
 
@@ -164,10 +164,10 @@ def generateCity(iterations, rule, useIntersectionRule=True, intersectRadius=Non
             node_size = 10
         else:
             node_size = 0
-        if labelType == "Node Type":
+        if nodeLabelType == "Node Type":
             with_labels = True
             labels=nx.get_node_attributes(G, 'nodeType')
-        elif labelType == "Node Number":
+        elif nodeLabelType == "Node Number":
             with_labels = True
             labels = {node: node for node in G.nodes()}
         else:
@@ -177,6 +177,9 @@ def generateCity(iterations, rule, useIntersectionRule=True, intersectRadius=Non
         pos = nx.get_node_attributes(G, 'pos')
         nx.draw_networkx_edges(G, pos, edge_color='black', width=3.0, ax=ax)  # Draw edges with outline
         nx.draw_networkx_edges(G, pos, edge_color='#fafbdb', width=2.0, ax=ax)  # Draw edges
+        if edgeLabelType == "Edge Weight":
+            edge_labels = nx.get_edge_attributes(G, 'weight')
+            nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, ax=ax)
         nx.draw_networkx_nodes(G, pos, node_size=node_size, ax=ax)
 
         if with_labels:
@@ -208,19 +211,26 @@ def generateCity(iterations, rule, useIntersectionRule=True, intersectRadius=Non
             else:
                 node_size = 0
 
-            if labelType == "Node Type":
+            if nodeLabelType == "Node Type":
                 with_labels = True
                 labels=nx.get_node_attributes(G, 'nodeType')
-            elif labelType == "Node Number":
+            elif nodeLabelType == "Node Number":
                 with_labels = True
                 labels = {node: node for node in G.nodes()}
             else:
                 with_labels = False
                 labels=None
 
+            edges = G.edges()
+            # Create a list of colors based on the weights of the edges
+            edge_colors = ['#fafbdb' if G[u][v]['weight'] == 1 else '#f7f6ee' for u, v in edges]
+
             pos = nx.get_node_attributes(G, 'pos')
             nx.draw_networkx_edges(G, pos, edge_color='black', width=3.0, ax=ax)  # Draw edges with outline
-            nx.draw_networkx_edges(G, pos, edge_color='#fafbdb', width=2.0, ax=ax)  # Draw edges
+            nx.draw_networkx_edges(G, pos, edge_color=edge_colors, width=2.0, ax=ax) 
+            if edgeLabelType == "Edge Weight":
+                edge_labels = nx.get_edge_attributes(G, 'weight')
+                nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, ax=ax)
             nx.draw_networkx_nodes(G, pos, node_size=node_size, ax=ax)
 
             if with_labels:
@@ -236,8 +246,8 @@ def generateCity(iterations, rule, useIntersectionRule=True, intersectRadius=Non
 
 #generateCity(10, 'rule1', useIntersectionRule=True,seed = 0,intersectRadius=0.1)
 #G = generateCity(20, 'rule2', useIntersectionRule=True,seed = 1,intersectRadius=0.1,labelType="Node Number",plotType="Animation")
-G = generateCity(20, 'ruleCity', useIntersectionRule=True,seed = 0,intersectRadius=0.1,labelType=None,plotType="Animation")
+G = generateCity(20, 'ruleCity', useIntersectionRule=True,seed = 0,intersectRadius=0.1,edgeLabelType="Edge Weight",plotType="Map")
 
 
 # dictionary of colours for each weight?
-# at least start by labelling weights
+# at least start by labelling weights 
