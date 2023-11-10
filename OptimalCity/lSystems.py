@@ -174,9 +174,15 @@ def generateCity(iterations, rule, useIntersectionRule=True, intersectRadius=Non
             with_labels = False
             labels=None
 
+        edges = G.edges()
+        # Create a list of colors based on the weights of the edges
+        edge_colors = ['#fafbdb' if G[u][v]['weight'] == 1 else '#f7f6ee' for u, v in edges]
+        edge_widths = [5 if G[u][v]['weight'] == 1 else 2 for u, v in edges]
+        edge_widthsBlack = [x + 1 for x in edge_widths]
+
         pos = nx.get_node_attributes(G, 'pos')
-        nx.draw_networkx_edges(G, pos, edge_color='black', width=3.0, ax=ax)  # Draw edges with outline
-        nx.draw_networkx_edges(G, pos, edge_color='#fafbdb', width=2.0, ax=ax)  # Draw edges
+        nx.draw_networkx_edges(G, pos, edge_color='black', width=edge_widthsBlack, ax=ax)  # Draw edges with outline
+        nx.draw_networkx_edges(G, pos, edge_color=edge_colors, width=edge_widths, ax=ax)  # Draw edges
         if edgeLabelType == "Edge Weight":
             edge_labels = nx.get_edge_attributes(G, 'weight')
             nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, ax=ax)
@@ -224,10 +230,13 @@ def generateCity(iterations, rule, useIntersectionRule=True, intersectRadius=Non
             edges = G.edges()
             # Create a list of colors based on the weights of the edges
             edge_colors = ['#fafbdb' if G[u][v]['weight'] == 1 else '#f7f6ee' for u, v in edges]
+            edge_widths = [5 if G[u][v]['weight'] == 1 else 2 for u, v in edges]
+            edge_widthsBlack = [x + 1 for x in edge_widths]
 
             pos = nx.get_node_attributes(G, 'pos')
-            nx.draw_networkx_edges(G, pos, edge_color='black', width=3.0, ax=ax)  # Draw edges with outline
-            nx.draw_networkx_edges(G, pos, edge_color=edge_colors, width=2.0, ax=ax) 
+            nx.draw_networkx_edges(G, pos, edge_color='black', width=edge_widthsBlack, ax=ax)  # Draw edges with outline
+            nx.draw_networkx_edges(G, pos, edge_color=edge_colors, width=edge_widths, ax=ax)  # Draw edges
+
             if edgeLabelType == "Edge Weight":
                 edge_labels = nx.get_edge_attributes(G, 'weight')
                 nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, ax=ax)
@@ -246,7 +255,7 @@ def generateCity(iterations, rule, useIntersectionRule=True, intersectRadius=Non
 
 #generateCity(10, 'rule1', useIntersectionRule=True,seed = 0,intersectRadius=0.1)
 #G = generateCity(20, 'rule2', useIntersectionRule=True,seed = 1,intersectRadius=0.1,labelType="Node Number",plotType="Animation")
-G = generateCity(20, 'ruleCity', useIntersectionRule=True,seed = 0,intersectRadius=0.1,edgeLabelType="Edge Weight",plotType="Map")
+G = generateCity(20, 'ruleCity', useIntersectionRule=True,seed = 0,intersectRadius=0.1,edgeLabelType=None,plotType="Map")
 
 
 # dictionary of colours for each weight?
