@@ -1,0 +1,8 @@
+m : Main Roads
+l : Large Roads
+s : Streets
+
+K : knots (finished node, no more expansion)
+B : branch (one edge that has split into two)
+T : twig (connected on both sides)
+L : leaf (new node, yet to be expanded)

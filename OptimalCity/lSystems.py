@@ -33,6 +33,8 @@ def createNodes(node,
                 length,
                 newNodeType,
                 weight = 1,
+                width=None,
+                height=None,
                 useIntersectionRule=True,
                 intersectRadius=None):
     """
@@ -94,8 +96,15 @@ def createNodes(node,
                 newNode = existing_node
                 newPosition = existing_position
                 break
-    
 
+        # Check if the new node is outside of the boundary
+    if width is not None and height is not None:
+        if newPosition[0] < -width/2 or newPosition[0] > width/2 or newPosition[1] < -height/2 or newPosition[1] > height/2:
+            G.nodes[node]['nodeType'] == 'boundary'
+            return
+        
+        
+            
     G.nodes[node]['nodeType'] = changeNodeTo # change the node type of the current node
 
     # if newPosition is already an existing node, then don't add a new node
@@ -128,25 +137,102 @@ def productionRules2(node, useIntersectionRule, intersectRadius=None):
         createNodes(node,'C',bAngle,bLength,'B', useIntersectionRule, intersectRadius)
         createNodes(node,'C',-bAngle,bLength,'B', useIntersectionRule, intersectRadius)
 
-def productionRulesCity(node, useIntersectionRule, intersectRadius=None):
+def productionRulesCity(node, currentIteration, useIntersectionRule, intersectRadius=None, width=None, height=None):
     if G.nodes[node]['nodeType'] == 'A':
-        aAngle = math.pi/2
-        aLength = 1
-        createNodes(node,'mK',aAngle,aLength,'mL', useIntersectionRule=useIntersectionRule, intersectRadius=intersectRadius, weight=1)
-        createNodes(node,'mK',-aAngle,aLength,'mL', useIntersectionRule=useIntersectionRule, intersectRadius=intersectRadius, weight=1)
+        aAngle = random.uniform(-math.pi,math.pi)
+        aLength = random.uniform(4,7)
+        createNodes(node,'mT',aAngle,aLength,'mL', useIntersectionRule=useIntersectionRule, intersectRadius=intersectRadius, weight=1, width=width, height=height)
+        createNodes(node,'mT',aAngle + math.pi,aLength,'mL', useIntersectionRule=useIntersectionRule, intersectRadius=intersectRadius, weight=1, width=width, height=height)
     elif G.nodes[node]['nodeType'] == 'mL':
-        aAngle = random.uniform(-0.1,0.1)
-        aLength = 2
-        createNodes(node,'mK',aAngle,aLength,'mL', useIntersectionRule=useIntersectionRule, intersectRadius=intersectRadius,weight=0.5)
 
+        singleAngle = random.uniform(-0.1,0.1)
+        branchAngle = random.uniform(math.pi/3,math.pi/2)
+        mLLength = random.uniform(3,4)
+        rng = random.random()
+        posNeg = random.choice([-1,1])
+        #print(0.05-currentIteration/1000)
+        #print(iterations)
+    
+        threshold = 0.2-currentIteration/100
+
+        if rng < threshold:
+            createNodes(node,'mB',singleAngle,mLLength+5,'mL', useIntersectionRule=useIntersectionRule, intersectRadius=intersectRadius,weight=1, width=width, height=height)
+            createNodes(node,'mB',(branchAngle)**posNeg,mLLength+5,'mL', useIntersectionRule=useIntersectionRule, intersectRadius=intersectRadius,weight=1, width=width, height=height)
+
+        else:
+            createNodes(node,'mT',singleAngle,mLLength,'mL', useIntersectionRule=useIntersectionRule, intersectRadius=intersectRadius,weight=1, width=width, height=height)
+
+    elif G.nodes[node]['nodeType'] == 'mT':
+        rng = random.random()
+        branchAngle = random.uniform(1.2,1.8)
+        posNeg = random.choice([-1,1])
+        if rng < 0.8: # 50% chance of creating a new node
+            createNodes(node,'mK',branchAngle**posNeg,4,'sL', useIntersectionRule=useIntersectionRule, intersectRadius=intersectRadius,weight=0.5, width=width, height=height)
+        else:
+            G.nodes[node]['nodeType'] = 'mK'
+
+    elif G.nodes[node]['nodeType'] == 'sL':
+        bAngle = random.uniform(1.5,1.6)
+        bLength = random.uniform(3,4)
+        createNodes(node,'sT',bAngle,bLength,'sL', useIntersectionRule=useIntersectionRule, intersectRadius=intersectRadius,weight=0.5, width=width, height=height)
+        createNodes(node,'sT',-bAngle,bLength,'sL', useIntersectionRule=useIntersectionRule, intersectRadius=intersectRadius,weight=0.5, width=width, height=height)
+
+def productionRulesCity2(node, currentIteration, useIntersectionRule, intersectRadius=None, width=None, height=None):
+    if G.nodes[node]['nodeType'] == 'A':
+        aAngle = random.uniform(-math.pi,math.pi)
+        aLength = random.uniform(7,10)
+        createNodes(node,'mT',aAngle,aLength,'mL', useIntersectionRule=useIntersectionRule, intersectRadius=intersectRadius, weight=1, width=width, height=height)
+        createNodes(node,'mT',aAngle + math.pi,aLength,'mL', useIntersectionRule=useIntersectionRule, intersectRadius=intersectRadius, weight=1, width=width, height=height)
+    elif G.nodes[node]['nodeType'] == 'mL':
+
+        singleAngle = random.uniform(-0.1,0.1)
+        branchAngle = random.uniform(math.pi/3,math.pi/2)
+        mLLength = random.uniform(5,8)
+        rng = random.random()
+        posNeg = random.choice([-1,1])
+        #print(0.05-currentIteration/1000)
+        #print(iterations)
+    
+        threshold = 0.2-currentIteration/100
+
+        if rng < threshold:
+            createNodes(node,'mB',singleAngle,mLLength+5,'mL', useIntersectionRule=useIntersectionRule, intersectRadius=intersectRadius,weight=1, width=width, height=height)
+            createNodes(node,'mB',(branchAngle)**posNeg,mLLength+5,'mL', useIntersectionRule=useIntersectionRule, intersectRadius=intersectRadius,weight=1, width=width, height=height)
+
+        else:
+            createNodes(node,'mT',singleAngle,mLLength,'mL', useIntersectionRule=useIntersectionRule, intersectRadius=intersectRadius,weight=1, width=width, height=height)
+
+    elif G.nodes[node]['nodeType'] == 'mT':
+        rng = random.random()
+        branchAngle = random.uniform(1.2,1.8)
+        posNeg = random.choice([-1,1])
+        if rng < 0.3: # 50% chance of creating a new node
+            createNodes(node,'mK',branchAngle**posNeg,4,'lL', useIntersectionRule=useIntersectionRule, intersectRadius=intersectRadius,weight=0.5, width=width, height=height)
+        else:
+            G.nodes[node]['nodeType'] = 'mK'
+
+    elif G.nodes[node]['nodeType'] == 'lL':
+        rng1 = random.random()
+        rng2 = random.random()
+        threshold = 0.2-currentIteration/100
+        posNeg = random.choice([-1,1])
+        bAngle = random.uniform(1.5,1.6)
+        singleAngle = random.uniform(-0.1,0.1)
+        bLength = random.uniform(3,4)
+        createNodes(node,'lT',singleAngle,bLength,'lL', useIntersectionRule=useIntersectionRule, intersectRadius=intersectRadius,weight=0.5, width=width, height=height)
+        if rng1 < threshold:
+            createNodes(node,'lT',bAngle**posNeg,bLength,'lL', useIntersectionRule=useIntersectionRule, intersectRadius=intersectRadius,weight=0.5, width=width, height=height)
+
+        #createNodes(node,'lT',-bAngle,bLength,'lL', useIntersectionRule=useIntersectionRule, intersectRadius=intersectRadius,weight=0.5, width=width, height=height)
 
 production_rules = {
     'rule1': productionRules1,
     'rule2': productionRules2,
-    'ruleCity': productionRulesCity
+    'ruleCity': productionRulesCity,
+    'ruleCity2': productionRulesCity2
 }
 
-def generateCity(iterations, rule, useIntersectionRule=True, intersectRadius=None, seed=None, plotType="Map", showNodes = False, nodeLabelType = None, edgeLabelType = None):
+def generateCity(iterations, rule, width=None, height=None, useIntersectionRule=True, intersectRadius=None, seed=None, plotType="Map", showNodes = False, nodeLabelType = None, edgeLabelType = None):
 
     random.seed(seed)
 
@@ -154,12 +240,7 @@ def generateCity(iterations, rule, useIntersectionRule=True, intersectRadius=Non
 
     fig, ax = plt.subplots()
 
-    def update(i):
-        ax.clear()
-
-        for node in list(G.nodes()):
-            production_rules[rule](node, useIntersectionRule, intersectRadius)
-
+    def graphSettings():
         if showNodes:
             node_size = 10
         else:
@@ -176,8 +257,8 @@ def generateCity(iterations, rule, useIntersectionRule=True, intersectRadius=Non
 
         edges = G.edges()
         # Create a list of colors based on the weights of the edges
-        edge_colors = ['#fafbdb' if G[u][v]['weight'] == 1 else '#f7f6ee' for u, v in edges]
-        edge_widths = [5 if G[u][v]['weight'] == 1 else 2 for u, v in edges]
+        edge_colors = ['#ffd747' if G[u][v]['weight'] == 1 else '#e3e3e3' for u, v in edges]
+        edge_widths = [3 if G[u][v]['weight'] == 1 else 2 for u, v in edges]
         edge_widthsBlack = [x + 1 for x in edge_widths]
 
         pos = nx.get_node_attributes(G, 'pos')
@@ -193,10 +274,19 @@ def generateCity(iterations, rule, useIntersectionRule=True, intersectRadius=Non
         plt.axis('on')  # Turn on the axes
         plt.grid(True)  # Add a grid
 
-        """
-        ax.set_xlim([-3.5, 0.5])  # Set x-axis limits
-        ax.set_ylim([-2, 2])  # Set y-axis limits
-        """
+    def update(i):
+        print(f"Starting iteration: {i+1}/{iterations}")
+        ax.clear()
+
+        for node in list(G.nodes()):
+            production_rules[rule](node, i+1, useIntersectionRule, intersectRadius, width, height)
+
+        graphSettings()
+
+        
+        ax.set_xlim([-100, 100])  # Set x-axis limits
+        ax.set_ylim([-100, 100])  # Set y-axis limits
+        
 
         # Add a text box displaying the current iteration
         iteration_text = f"Iteration: {i+1}/{iterations}"
@@ -208,55 +298,17 @@ def generateCity(iterations, rule, useIntersectionRule=True, intersectRadius=Non
         plt.show()
     else:
         for i in range(iterations):
+            print(f"Starting iteration: {i+1}/{iterations}")
             for node in list(G.nodes()):
-                production_rules[rule](node, useIntersectionRule, intersectRadius)
+                production_rules[rule](node, i, useIntersectionRule, intersectRadius, width, height)
 
         if plotType == "Map":
-            if showNodes:
-                node_size = 10
-            else:
-                node_size = 0
-
-            if nodeLabelType == "Node Type":
-                with_labels = True
-                labels=nx.get_node_attributes(G, 'nodeType')
-            elif nodeLabelType == "Node Number":
-                with_labels = True
-                labels = {node: node for node in G.nodes()}
-            else:
-                with_labels = False
-                labels=None
-
-            edges = G.edges()
-            # Create a list of colors based on the weights of the edges
-            edge_colors = ['#fafbdb' if G[u][v]['weight'] == 1 else '#f7f6ee' for u, v in edges]
-            edge_widths = [5 if G[u][v]['weight'] == 1 else 2 for u, v in edges]
-            edge_widthsBlack = [x + 1 for x in edge_widths]
-
-            pos = nx.get_node_attributes(G, 'pos')
-            nx.draw_networkx_edges(G, pos, edge_color='black', width=edge_widthsBlack, ax=ax)  # Draw edges with outline
-            nx.draw_networkx_edges(G, pos, edge_color=edge_colors, width=edge_widths, ax=ax)  # Draw edges
-
-            if edgeLabelType == "Edge Weight":
-                edge_labels = nx.get_edge_attributes(G, 'weight')
-                nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, ax=ax)
-            nx.draw_networkx_nodes(G, pos, node_size=node_size, ax=ax)
-
-            if with_labels:
-                nx.draw_networkx_labels(G, pos, labels=labels, ax=ax)
-
-            plt.axis('on')  # Turn on the axes
-            plt.grid(True)  # Add a grid
-
+            graphSettings()
             plt.show()
 
     #return the graph object
     return G
 
-#generateCity(10, 'rule1', useIntersectionRule=True,seed = 0,intersectRadius=0.1)
-#G = generateCity(20, 'rule2', useIntersectionRule=True,seed = 1,intersectRadius=0.1,labelType="Node Number",plotType="Animation")
-G = generateCity(20, 'ruleCity', useIntersectionRule=True,seed = 0,intersectRadius=0.1,edgeLabelType=None,plotType="Map")
+# G = generateCity(30, 'ruleCity', intersectRadius=1.5, seed=2, showNodes=False, plotType="Animation",nodeLabelType=None, width=80, height=80)
+G = generateCity(30, 'ruleCity2', intersectRadius=1.5, seed=3, showNodes=False, plotType="Animation",nodeLabelType=None, width=120, height=120)
 
-
-# dictionary of colours for each weight?
-# at least start by labelling weights 
