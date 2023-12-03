@@ -1,4 +1,4 @@
-from lSystemsV3 import generateCity
+from lSystems import generateCity
 import matplotlib.pyplot as plt
 
 G = generateCity(25, 'ruleCity', intersectRadius=0.5, showNodes=False, plotType="Map",show=False)
