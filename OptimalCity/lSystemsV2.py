@@ -60,6 +60,18 @@ def findClosestIntersection(G, node, newPosition):
     else:
         return False
     
+def calcMinDistanceToType(G, position, nodeType): # Calculate the minimum distance to a node of a certain type
+    distance = math.inf
+    if nodeType in nx.get_node_attributes(G, 'nodeType').values():
+        for node in G.nodes():
+            if G.nodes[node]['nodeType'] == nodeType:
+                checkDistance = ((position[0] - G.nodes[node]['pos'][0])**2 + (position[1] - G.nodes[node]['pos'][1])**2)**0.5
+                if checkDistance < distance:
+                    distance = checkDistance
+        return distance
+    else:
+        return math.inf
+    
     
 def checkBoundary(G, node, newPosition, width, height):
     currentPosition = G.nodes[node]['pos']
@@ -98,7 +110,6 @@ def createNodes2(G, node, changeNodeTo, theta, length, newNodeType, weight = 1, 
     if closestIntersection:
         newPosition = closestIntersection
         
-
     """ NOT CURRENTLY WORKING
     boundaryIntersection = checkBoundary(G, node, newPosition, width, height)
     
@@ -120,7 +131,87 @@ def createNodes2(G, node, changeNodeTo, theta, length, newNodeType, weight = 1, 
         G.add_node(newNode, nodeType=newNodeType, pos=newPosition, incEdge=newDirection)
         G.add_edge(node, newNode,weight=weight)
 
-#11 to 16 because of tooClose, but 16 isnt actually a node?
+
+def productionRulesCity(node, currentIteration, intersectRadius=None, width=None, height=None):
+
+    if G.nodes[node]['nodeType'] == 'A':
+        startingAngle = random.uniform(-math.pi,math.pi)
+        length = 1
+        createNodes2(G, node,'mT',startingAngle,length,'mL', intersectRadius=intersectRadius, weight=1, width=width, height=height)
+        createNodes2(G, node,'mT',startingAngle + math.pi,length,'mL', intersectRadius=intersectRadius, weight=1, width=width, height=height)
+
+    if G.nodes[node]['nodeType'] == 'mL':
+        angle = random.uniform(-math.pi/10,math.pi/10)
+        length = 1
+        rng = random.random()
+        newNode,newPosition = calculateNewPosition(G, node, angle, length)
+        distanceTomBm = calcMinDistanceToType(G, newPosition, 'mBm')
+        distanceTomBl = calcMinDistanceToType(G, newPosition, 'mBl')
+        distanceToK = calcMinDistanceToType(G, newPosition, 'mK')
+        distanceTolBm = calcMinDistanceToType(G, newPosition, 'lBm')
+        distanceTolBl = calcMinDistanceToType(G, newPosition, 'lBl')
+        distanceTolK = calcMinDistanceToType(G, newPosition, 'lK')
+        if distanceTomBm > 12 and distanceToK > 12 and distanceTomBl > 12 and distanceTolBm > 7 and distanceTolBl > 7 and distanceTolK > 7:
+            if rng < 0.2:
+                createNodes2(G, node,'mBm',angle,length,'mL', intersectRadius=intersectRadius,weight=1, width=width, height=height)
+            elif rng < 0.8:
+                createNodes2(G, node,'mBl',angle,length,'mL', intersectRadius=intersectRadius,weight=1, width=width, height=height)
+            else:
+                createNodes2(G, node,'mT',angle,length,'mL', intersectRadius=intersectRadius,weight=1, width=width, height=height)
+        else:
+            createNodes2(G, node,'mT',angle,length,'mL', intersectRadius=intersectRadius,weight=1, width=width, height=height)
+    
+    if G.nodes[node]['nodeType'] == 'mBm':
+        posNeg = random.choice([-1,1])
+        angle = (math.pi/2) + random.uniform(-math.pi/10,math.pi/10)
+        length = 1
+        createNodes2(G, node,'mK',angle*posNeg,length,'mL', intersectRadius=intersectRadius, weight=1, width=width, height=height)
+    
+    if G.nodes[node]['nodeType'] == 'mBl':
+        posNeg = random.choice([-1,1])
+        angle = (math.pi/2) + random.uniform(-math.pi/10,math.pi/10)
+        length = 1
+        createNodes2(G, node,'mK',angle*posNeg,length,'lL', intersectRadius=intersectRadius, weight=0.5, width=width, height=height)
+
+    if G.nodes[node]['nodeType'] == 'lL':
+        angle = random.uniform(-math.pi/10,math.pi/10)
+        length = 1
+        rng = random.random()
+        newNode,newPosition = calculateNewPosition(G, node, angle, length)
+        createNodes2(G, node,'lT',angle,length,'lL', intersectRadius=intersectRadius, weight=0.5, width=width, height=height)
+        distanceTomBm = calcMinDistanceToType(G, newPosition, 'mBm')
+        distanceTomBl = calcMinDistanceToType(G, newPosition, 'mBl')
+        distanceToK = calcMinDistanceToType(G, newPosition, 'mK')
+        distanceTolBm = calcMinDistanceToType(G, newPosition, 'lBm')
+        distanceTolBl = calcMinDistanceToType(G, newPosition, 'lBl')
+        distanceTolK = calcMinDistanceToType(G, newPosition, 'lK')
+        if distanceTomBm > 12 and distanceToK > 12 and distanceTomBl > 12 and distanceTolBm > 7 and distanceTolBl > 7 and distanceTolK > 7:
+            if rng < 0.2:
+                createNodes2(G, node,'lBl',angle,length,'lL', intersectRadius=intersectRadius,weight=0.5, width=width, height=height)
+            elif rng < 0.5:
+                createNodes2(G, node,'lBs',angle,length,'lL', intersectRadius=intersectRadius,weight=0.5, width=width, height=height)
+            else:
+                createNodes2(G, node,'lT',angle,length,'lL', intersectRadius=intersectRadius,weight=0.5, width=width, height=height)
+        else:
+            createNodes2(G, node,'lT',angle,length,'lL', intersectRadius=intersectRadius,weight=0.5, width=width, height=height)
+
+    if G.nodes[node]['nodeType'] == 'lBl':
+        posNeg = random.choice([-1,1])
+        angle = (math.pi/2) + random.uniform(-math.pi/10,math.pi/10)
+        length = 1
+        createNodes2(G, node,'lK',angle*posNeg,length,'lL', intersectRadius=intersectRadius, weight=0.5, width=width, height=height)
+
+    if G.nodes[node]['nodeType'] == 'lBs':
+        posNeg = random.choice([-1,1])
+        angle = (math.pi/2) + random.uniform(-math.pi/10,math.pi/10)
+        length = 1
+        createNodes2(G, node,'lK',angle*posNeg,length,'sL', intersectRadius=intersectRadius, weight=0.2, width=width, height=height)
+
+    if G.nodes[node]['nodeType'] == 'sL':
+        angle = random.uniform(1.5,1.6)
+        length = 1
+        createNodes2(G, node,'sT',angle,length,'sL', intersectRadius=intersectRadius, weight=0.2, width=width, height=height)
+        createNodes2(G, node,'sT',-angle,length,'sL', intersectRadius=intersectRadius, weight=0.2, width=width, height=height)
        
 def productionRulesCity2(node, currentIteration, intersectRadius=None, width=None, height=None):
     if G.nodes[node]['nodeType'] == 'A':
@@ -171,6 +262,7 @@ def productionRulesCity2(node, currentIteration, intersectRadius=None, width=Non
         #createNodes(node,'lT',-bAngle,bLength,'lL', intersectRadius=intersectRadius,weight=0.5, width=width, height=height)
 
 production_rules = {
+    'ruleCity': productionRulesCity,
     'ruleCity2': productionRulesCity2
 }
 
@@ -199,8 +291,8 @@ def generateCity(iterations, rule, width=None, height=None, intersectRadius=None
 
         edges = G.edges()
         # Create a list of colors based on the weights of the edges
-        edge_colors = ['#ffd747' if G[u][v]['weight'] == 1 else '#e3e3e3' for u, v in edges]
-        edge_widths = [3 if G[u][v]['weight'] == 1 else 2 for u, v in edges]
+        edge_colors = ['#ffd747' if G[u][v]['weight'] == 1 else '#e3e3e3' if G[u][v]['weight'] == 0.5 else '#dbdbdb' for u, v in edges]
+        edge_widths = [4 if G[u][v]['weight'] == 1 else 3 if G[u][v]['weight'] == 0.5 else 2 for u, v in edges]
         edge_widthsBlack = [x + 1 for x in edge_widths]
 
         pos = nx.get_node_attributes(G, 'pos')
@@ -252,6 +344,5 @@ def generateCity(iterations, rule, width=None, height=None, intersectRadius=None
     #return the graph object
     return G
 
-# G = generateCity(30, 'ruleCity', intersectRadius=1.5, seed=2, showNodes=False, plotType="Animation",nodeLabelType=None, width=80, height=80)
-G = generateCity(100, 'ruleCity2', intersectRadius=1.5, seed=3, showNodes=False, plotType="Map",nodeLabelType=None, width=120, height=120)
-
+#G = generateCity(100, 'ruleCity2', intersectRadius=1.5, seed=3, showNodes=False, plotType="Map",nodeLabelType=None, width=120, height=120)
+G = generateCity(50, 'ruleCity', intersectRadius=0.9, seed=0, showNodes=False, plotType="Map",nodeLabelType=None, width=120, height=120)

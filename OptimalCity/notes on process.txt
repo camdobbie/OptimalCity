@@ -1,5 +1,0 @@
-did initial bit
-added intersection check
-added check if node is within intersect radius of another node
-nodes were being spawned on top of others if they were too close
-fixed this
