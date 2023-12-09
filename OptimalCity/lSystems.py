@@ -136,11 +136,26 @@ def createNodes(G, node, changeNodeTo, theta, length, newRoadType, newNodeType, 
     else:
         G.add_node(newNode, nodeType=newNodeType, pos=newPosition, incEdge=newDirection, roadType = newRoadType) # add the new node to the graph
         G.add_edge(node, newNode,weight=weight)
+        G.nodes[newNode]['minDistances'] = {}
 
+        # initialize the minDistances dictionary for the road node type combinations as infinity
+        for nodeRoadAndType in nodeRoadsAndTypes:
+            G.nodes[newNode]['minDistances'][nodeRoadAndType] = math.inf
+
+
+
+    """
     for node in G.nodes():
         position = G.nodes[node]['pos']
         minDistances = {nodeType: calcMinDistanceToType(G, position, nodeType) for nodeType in nodeRoadsAndTypes}
         G.nodes[node]['minDistances'] = minDistances
+    """
+
+    # iterate over all nodes in G which have a nodeType of L
+    for node in [node for node in G.nodes() if G.nodes[node]['nodeType'] == 'L']:
+        position = G.nodes[node]['pos']
+        # update the minDistances dictionary for the road node type combination of this new node
+        G.nodes[node]['minDistances'][newRoadType + newNodeType] = calcMinDistanceToType(G, position, newRoadType + newNodeType)
 
 
 productionRulesCityDict = {
@@ -369,5 +384,5 @@ def generateCity(iterations, rule, width=None, height=None, intersectRadius=None
     return G
 
 #G = generateCity(100, 'ruleCity2', intersectRadius=1.5, showNodes=False, plotType="Map",nodeLabelType=None, width=120, height=120)
-#G = generateCity(5, 'ruleCity', intersectRadius=0.5, showNodes=False, plotType="Map",nodeLabelType="Node Type",show=False)
+#G = generateCity(20, 'ruleCity', intersectRadius=0.5, showNodes=False, plotType="Animation",nodeLabelType="None")
 
