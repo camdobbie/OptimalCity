@@ -1,7 +1,7 @@
 from lSystems import generateCity
 import matplotlib.pyplot as plt
 
-G = generateCity(25, 'ruleCity', intersectRadius=0.5, showNodes=False, plotType="Map",show=False)
+G = generateCity(16, 'ruleCity', intersectRadius=0.5, showNodes=False, plotType="Map",show=False)
 plt.axis('off')
 plt.grid(False)
 plt.show()
