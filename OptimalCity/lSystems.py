@@ -147,20 +147,7 @@ def createNodes(G, node, changeNodeTo, theta, length, newRoadType, newNodeType, 
         G.add_node(newNode, nodeType=newNodeType, pos=newPosition, incEdge=newDirection, roadType = newRoadType) # add the new node to the graph
         G.add_edge(node, newNode,weight=weight)
 
-        #for the new node, create the minDistances dictionary by calculating the minimum distance to each node type
-        G.nodes[newNode]['minDistances'] = {}
-        for nodeType in nodeRoadsAndTypes:
-            G.nodes[newNode]['minDistances'][nodeType] = calcMinDistanceToType(G, newPosition, nodeType)
-            creationCalcs += 12
-            counter += 12
 
-        #calculate the minimum distances for all the existing nodes to the new node road and type
-        for node in G.nodes():
-            position = G.nodes[node]['pos']
-            min_distance = calcMinDistanceToType(G, position, newRoadAndType)
-            G.nodes[node]['minDistances'][newRoadAndType] = min_distance
-            updateCalcs += 1
-            counter += 1
 
 
 productionRulesCityDict = {
@@ -259,11 +246,6 @@ def generateCity(iterations, rule, width=None, height=None, intersectRadius=None
 
     G.add_node(0, nodeType='Start', roadType="m", pos=(0,0), incEdge=(0,1)) # incEdge is the direction of the incoming edge
     
-    #initialize the minDistances dictionary for the start node, with all distances set to infinity
-    G.nodes[0]['minDistances'] = {}
-    for nodeType in nodeRoadsAndTypes:
-        G.nodes[0]['minDistances'][nodeType] = math.inf
-
     fig, ax = plt.subplots()
 
     def graphSettings():
@@ -304,6 +286,7 @@ def generateCity(iterations, rule, width=None, height=None, intersectRadius=None
         plt.grid(True)  # Add a grid
 
     def applyLSystem():
+        global counter
         nodes = list(G.nodes())  # Create a copy of the nodes
         for node in nodes:
 
@@ -327,6 +310,7 @@ def generateCity(iterations, rule, width=None, height=None, intersectRadius=None
             random.shuffle(ruleIndices)
             ruleIndices.insert(0,idealRuleIndex)
 
+            """
             for ruleIndex in ruleIndices:
                 rule = rules[ruleIndex]
                 #check if the rule can be applied by checking the minDistances
@@ -334,6 +318,19 @@ def generateCity(iterations, rule, width=None, height=None, intersectRadius=None
                     continue #if the rule cannot be applied, skip it
                 else:
                     break #if the rule can be applied, break out of the loop and apply it
+            """
+
+            #check if the rule can be applied, by calculating the minDistances to all nodes of the types in the rule
+            for ruleIndex in ruleIndices:
+                rule = rules[ruleIndex]
+                minDistances = {}
+                for nodeType in rule['minDistances']:
+                    minDistances[nodeType] = calcMinDistanceToType(G, G.nodes[node]['pos'], nodeType)
+                    counter += 1
+                if not all([minDistances[nodeType] >= minDistance for nodeType,minDistance in rule['minDistances'].items()]):
+                    continue
+                else:
+                    break
 
 
             if not len(rule['thetas']) == len(rule['lengths']) == len(rule['newRoadTypes']) == len(rule['newNodeTypes']):
@@ -394,8 +391,7 @@ def generateCity(iterations, rule, width=None, height=None, intersectRadius=None
     return G
 
 #G = generateCity(100, 'ruleCity2', intersectRadius=1.5, showNodes=False, plotType="Map",nodeLabelType=None, width=120, height=120)
-G = generateCity(25, 'ruleCity', intersectRadius=0.5, showNodes=False, plotType="Map",nodeLabelType="None",show=True)
+G = generateCity(50, 'ruleCity', intersectRadius=0.5, showNodes=False, plotType="Animation",nodeLabelType="None",show=True)
 
-print("Calculated a total of " + str(counter) + " minDistances")
-print("Calculated a total of " + str(creationCalcs) + " minDistances during creation")
-print("Calculated a total of " + str(updateCalcs) + " minDistances during updating")
+#print("Calculated a total of " + str(counter) + " minDistances")
+
