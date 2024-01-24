@@ -6,7 +6,7 @@ import math
 import random
 import numpy as np
 
-seed = 2
+seed = 3
 random.seed(seed)
 np.random.seed(seed)
 
@@ -119,6 +119,9 @@ def checkBoundary(G, node, newPosition, width, height):
     
 def createNodes(G, node, changeNodeTo, theta, length, newRoadType, newNodeType, weight = 1, width=None, height=None, intersectRadius=None):
     newNode,newPosition = calculateNewPosition(G, node, theta, length)
+
+    newRoadAndType = newRoadType + newNodeType;
+
     # Check if the new edge intersects with any existing edge
     closestIntersection = findClosestIntersection(G, node, newPosition)
     if closestIntersection:
@@ -137,10 +140,16 @@ def createNodes(G, node, changeNodeTo, theta, length, newRoadType, newNodeType, 
         G.add_node(newNode, nodeType=newNodeType, pos=newPosition, incEdge=newDirection, roadType = newRoadType) # add the new node to the graph
         G.add_edge(node, newNode,weight=weight)
 
-    for node in G.nodes():
-        position = G.nodes[node]['pos']
-        minDistances = {nodeType: calcMinDistanceToType(G, position, nodeType) for nodeType in nodeRoadsAndTypes}
-        G.nodes[node]['minDistances'] = minDistances
+        #for the new node, create the minDistances dictionary by calculating the minimum distance to each node type
+        G.nodes[newNode]['minDistances'] = {}
+        for nodeType in nodeRoadsAndTypes:
+            G.nodes[newNode]['minDistances'][nodeType] = calcMinDistanceToType(G, newPosition, nodeType)
+
+
+        for node in G.nodes():
+            position = G.nodes[node]['pos']
+            min_distance = calcMinDistanceToType(G, position, newRoadAndType)
+            G.nodes[node]['minDistances'][newRoadAndType] = min_distance
 
 
 productionRulesCityDict = {
@@ -238,6 +247,11 @@ production_rules = {
 def generateCity(iterations, rule, width=None, height=None, intersectRadius=None, plotType="Map", showNodes = False, nodeLabelType = None, edgeLabelType = None, show=True):
 
     G.add_node(0, nodeType='Start', roadType="m", pos=(0,0), incEdge=(0,1)) # incEdge is the direction of the incoming edge
+    
+    #initialize the minDistances dictionary for the start node, with all distances set to infinity
+    G.nodes[0]['minDistances'] = {}
+    for nodeType in nodeRoadsAndTypes:
+        G.nodes[0]['minDistances'][nodeType] = math.inf
 
     fig, ax = plt.subplots()
 
@@ -369,5 +383,5 @@ def generateCity(iterations, rule, width=None, height=None, intersectRadius=None
     return G
 
 #G = generateCity(100, 'ruleCity2', intersectRadius=1.5, showNodes=False, plotType="Map",nodeLabelType=None, width=120, height=120)
-#G = generateCity(20, 'ruleCity', intersectRadius=0.5, showNodes=False, plotType="Animation",nodeLabelType="None")
+G = generateCity(25, 'ruleCity', intersectRadius=0.5, showNodes=False, plotType="Map",nodeLabelType="None",show=True)
 
