@@ -6,6 +6,10 @@ import math
 import random
 import numpy as np
 
+counter = 0
+creationCalcs = 0
+updateCalcs = 0
+
 seed = 3
 random.seed(seed)
 np.random.seed(seed)
@@ -118,8 +122,11 @@ def checkBoundary(G, node, newPosition, width, height):
         return False
     
 def createNodes(G, node, changeNodeTo, theta, length, newRoadType, newNodeType, weight = 1, width=None, height=None, intersectRadius=None):
-    newNode,newPosition = calculateNewPosition(G, node, theta, length)
+    global counter
+    global creationCalcs
+    global updateCalcs
 
+    newNode,newPosition = calculateNewPosition(G, node, theta, length)
     newRoadAndType = newRoadType + newNodeType;
 
     # Check if the new edge intersects with any existing edge
@@ -144,12 +151,16 @@ def createNodes(G, node, changeNodeTo, theta, length, newRoadType, newNodeType, 
         G.nodes[newNode]['minDistances'] = {}
         for nodeType in nodeRoadsAndTypes:
             G.nodes[newNode]['minDistances'][nodeType] = calcMinDistanceToType(G, newPosition, nodeType)
+            creationCalcs += 12
+            counter += 12
 
-
+        #calculate the minimum distances for all the existing nodes to the new node road and type
         for node in G.nodes():
             position = G.nodes[node]['pos']
             min_distance = calcMinDistanceToType(G, position, newRoadAndType)
             G.nodes[node]['minDistances'][newRoadAndType] = min_distance
+            updateCalcs += 1
+            counter += 1
 
 
 productionRulesCityDict = {
@@ -385,3 +396,6 @@ def generateCity(iterations, rule, width=None, height=None, intersectRadius=None
 #G = generateCity(100, 'ruleCity2', intersectRadius=1.5, showNodes=False, plotType="Map",nodeLabelType=None, width=120, height=120)
 G = generateCity(25, 'ruleCity', intersectRadius=0.5, showNodes=False, plotType="Map",nodeLabelType="None",show=True)
 
+print("Calculated a total of " + str(counter) + " minDistances")
+print("Calculated a total of " + str(creationCalcs) + " minDistances during creation")
+print("Calculated a total of " + str(updateCalcs) + " minDistances during updating")
