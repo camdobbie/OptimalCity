@@ -1,4 +1,4 @@
-from lSystems import generateCity
+from cityGenerator import generateCity
 import time
 import matplotlib.pyplot as plt
 

@@ -1,5 +1,5 @@
 from grammars import grammars
-from lSystems import CityGenerator
+from cityGenerator import CityGenerator
 
 # Create an instance of the CityGenerator class
 cityGen = CityGenerator()
