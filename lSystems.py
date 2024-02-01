@@ -4,345 +4,291 @@ import matplotlib.animation as animation
 import math
 import random
 import numpy as np
-
 import time
 
-proxTime = 0
-intersectTime = 0
-newPosTime = 0
-closestIntTime = 0
-minDistTime = 0
+import networkx as nx
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+import math
+import random
+import numpy as np
+import time
 
-counter = 0
-creationCalcs = 0
-updateCalcs = 0
-
-G = nx.Graph()
-
-roadTypes = ["m","l","s"]
-nodeTypesGen = ["K","T","B","L"]
+class CityGenerator:
+    def __init__(self):
+        self.G = nx.Graph()
+        self.roadTypes = ["m","l","s"]
+        self.nodeTypesGen = ["K","T","B","L"]
 #make nodeRoadsAndTypes a list of all possible combinations of roadTypes and nodeTypesGen
-nodeRoadsAndTypes = [roadType + nodeType for roadType in roadTypes for nodeType in nodeTypesGen]
+        self.nodeRoadsAndTypes = [roadType + nodeType for roadType in self.roadTypes for nodeType in self.nodeTypesGen]
 
+    def getRandomThetaList(self, minimum, maximum):
+        theta = random.uniform(minimum, maximum) * random.choice([-1, 1])
+        return theta
 
+    def getRandomThetaSingle(self, theta):
+        theta = theta * random.choice([-1, 1])
+        return theta
 
-def getRandomThetaList(minimum,maximum):
-    theta = random.uniform(minimum,maximum)*random.choice([-1,1])
-    return theta
-
-def getRandomThetaSingle(theta):
-    theta = theta*random.choice([-1,1])
-    return theta
-
-def calcIntersectionPoint(p1, p2, p3, p4): # Function to calculate the intersection point of two lines
-
-    global intersectTime
-    global counter
-    counter += 1
-    start_time = time.time()
-
-    # first check if the lines do intersect
-    if (p1[0] - p2[0])*(p3[1] - p4[1]) - (p1[1] - p2[1])*(p3[0] - p4[0]) == 0:
-        return False
-    else:
-        # Calculate the intersection point
-        x = ((p1[0]*p2[1] - p1[1]*p2[0])*(p3[0] - p4[0]) - (p1[0] - p2[0])*(p3[0]*p4[1] - p3[1]*p4[0])) / ((p1[0] - p2[0])*(p3[1] - p4[1]) - (p1[1] - p2[1])*(p3[0] - p4[0]))
-        y = ((p1[0]*p2[1] - p1[1]*p2[0])*(p3[1] - p4[1]) - (p1[1] - p2[1])*(p3[0]*p4[1] - p3[1]*p4[0])) / ((p1[0] - p2[0])*(p3[1] - p4[1]) - (p1[1] - p2[1])*(p3[0] - p4[0]))
-        # Check if the intersection point is at the endpoint of either line
-        if (x == p1[0] and y == p1[1]) or (x == p2[0] and y == p2[1]) or (x == p3[0] and y == p3[1]) or (x == p4[0] and y == p4[1]):
+    def calcIntersectionPoint(self, p1, p2, p3, p4):
+        if (p1[0] - p2[0])*(p3[1] - p4[1]) - (p1[1] - p2[1])*(p3[0] - p4[0]) == 0:
             return False
-        # check is the intersection point is on the line segments
-        elif (x >= min(p1[0],p2[0]) and x <= max(p1[0],p2[0]) and y >= min(p1[1],p2[1]) and y <= max(p1[1],p2[1])) and (x >= min(p3[0],p4[0]) and x <= max(p3[0],p4[0]) and y >= min(p3[1],p4[1]) and y <= max(p3[1],p4[1])):
-            end_time = time.time()
-            intersectTime += (end_time - start_time)
-            return (x,y)
         else:
-            end_time = time.time()
-            intersectTime += (end_time - start_time)
+            # Calculate the intersection point
+            x = ((p1[0]*p2[1] - p1[1]*p2[0])*(p3[0] - p4[0]) - (p1[0] - p2[0])*(p3[0]*p4[1] - p3[1]*p4[0])) / ((p1[0] - p2[0])*(p3[1] - p4[1]) - (p1[1] - p2[1])*(p3[0] - p4[0]))
+            y = ((p1[0]*p2[1] - p1[1]*p2[0])*(p3[1] - p4[1]) - (p1[1] - p2[1])*(p3[0]*p4[1] - p3[1]*p4[0])) / ((p1[0] - p2[0])*(p3[1] - p4[1]) - (p1[1] - p2[1])*(p3[0] - p4[0]))
+            # Check if the intersection point is at the endpoint of either line
+            if (x == p1[0] and y == p1[1]) or (x == p2[0] and y == p2[1]) or (x == p3[0] and y == p3[1]) or (x == p4[0] and y == p4[1]):
+                return False
+            # check is the intersection point is on the line segments
+            elif (x >= min(p1[0],p2[0]) and x <= max(p1[0],p2[0]) and y >= min(p1[1],p2[1]) and y <= max(p1[1],p2[1])) and (x >= min(p3[0],p4[0]) and x <= max(p3[0],p4[0]) and y >= min(p3[1],p4[1]) and y <= max(p3[1],p4[1])):
+                return (x,y)
+            else:
+                return False
+
+    def calculateNewPosition(self, node, theta, length):
+
+        newNode = list(self.G.nodes())[-1] + 1
+        currentPosition = self.G.nodes[node]['pos']  # get the position of the current node
+        currentDirection = self.G.nodes[node]['incEdge'] # get the direction of the incoming edge
+        currentDirectionUnit = (currentDirection[0]/(currentDirection[0]**2 + currentDirection[1]**2)**0.5, currentDirection[1]/(currentDirection[0]**2 + currentDirection[1]**2)**0.5) # Normalise current direction into a unit vector
+        currentDirectionRotated = (currentDirectionUnit[0] * math.cos(theta) - currentDirectionUnit[1] * math.sin(theta), currentDirectionUnit[0] * math.sin(theta) + currentDirectionUnit[1] * math.cos(theta)) # rotate the current direction by theta
+        newDirection = (currentDirectionRotated[0] * length, currentDirectionRotated[1] * length) # scale the rotated direction by length
+        newPosition = (currentPosition[0] + newDirection[0], currentPosition[1] + newDirection[1]) # calculate the new position
+
+        return newNode,newPosition
+        # ...
+
+    def checkProximity(self, position, intersectRadius):
+        # ...
+        for existingNode in self.G.nodes():
+            existingPosition = self.G.nodes[existingNode]['pos']
+            distance = ((position[0] - existingPosition[0])**2 + (position[1] - existingPosition[1])**2)**0.5
+            if distance < intersectRadius:
+                return existingNode
+
+    def checkBoundaryBoxIntersection(self, box1, box2):
+        if box1[0] > box2[1] or box1[1] < box2[0] or box1[2] > box2[3] or box1[3] < box2[2]:
             return False
-        
-def calculateNewPosition(G, node, theta, length):
-    global newPosTime
-    start_time = time.time()
-
-    newNode = list(G.nodes())[-1] + 1
-    currentPosition = G.nodes[node]['pos']  # get the position of the current node
-    currentDirection = G.nodes[node]['incEdge'] # get the direction of the incoming edge
-    currentDirectionUnit = (currentDirection[0]/(currentDirection[0]**2 + currentDirection[1]**2)**0.5, currentDirection[1]/(currentDirection[0]**2 + currentDirection[1]**2)**0.5) # Normalise current direction into a unit vector
-    currentDirectionRotated = (currentDirectionUnit[0] * math.cos(theta) - currentDirectionUnit[1] * math.sin(theta), currentDirectionUnit[0] * math.sin(theta) + currentDirectionUnit[1] * math.cos(theta)) # rotate the current direction by theta
-    newDirection = (currentDirectionRotated[0] * length, currentDirectionRotated[1] * length) # scale the rotated direction by length
-    newPosition = (currentPosition[0] + newDirection[0], currentPosition[1] + newDirection[1]) # calculate the new position
-
-    end_time = time.time()
-    newPosTime += (end_time - start_time)
-    return newNode,newPosition
-
-def checkProximity(G, position, intersectRadius):
-        # Before the block of code
-    global proxTime
-    start_time = time.time()
-
-    for existingNode in G.nodes():
-        existingPosition = G.nodes[existingNode]['pos']
-        distance = ((position[0] - existingPosition[0])**2 + (position[1] - existingPosition[1])**2)**0.5
-        if distance < intersectRadius:
-            return existingNode
-        
-        # After the block of code
-    end_time = time.time()
-
-    proxTime += (end_time - start_time)
-
-def checkBoundaryBoxIntersection(box1, box2):
-    #box1 and box2 take the form of a tuple of (xMin, xMax, yMin, yMax). This function checks if the two boxes intersect
-    if box1[0] > box2[1] or box1[1] < box2[0] or box1[2] > box2[3] or box1[3] < box2[2]:
-        return False
-    else:
-        return True
-
-def findClosestIntersection(G, node, newPosition):
-
-    global closestIntTime
-    start_time = time.time()
-
-    #define the bounding box of the new edge
-    newEdgeXMin = min(G.nodes[node]['pos'][0], newPosition[0])
-    newEdgeXMax = max(G.nodes[node]['pos'][0], newPosition[0])
-    newEdgeYMin = min(G.nodes[node]['pos'][1], newPosition[1])
-    newEdgeYMax = max(G.nodes[node]['pos'][1], newPosition[1])
-    newEdgeBoundingBox = (newEdgeXMin,newEdgeXMax,newEdgeYMin,newEdgeYMax)
-
-    intersections = []
-    currentPosition = G.nodes[node]['pos']
-
-    for edge in G.edges():
-        if checkBoundaryBoxIntersection(G.edges[edge]['boundaryBox'], newEdgeBoundingBox):
-            p1 = G.nodes[edge[0]]['pos']
-            p2 = G.nodes[edge[1]]['pos']
-            intersection = calcIntersectionPoint(p1, p2, currentPosition, newPosition)
-            if intersection:  # If there is an intersection
-                distance = ((intersection[0] - currentPosition[0])**2 + (intersection[1] - currentPosition[1])**2)**0.5
-                intersections.append((intersection, distance))
-
-    if intersections:
-        closestIntersection = min(intersections, key=lambda x: x[1])[0]
-        end_time = time.time()
-        closestIntTime += (end_time - start_time)
-        return closestIntersection
-    else:
-        end_time = time.time()
-        closestIntTime += (end_time - start_time)
-        return False
-    
-def calcMinDistanceToType(G, position, nodeType): # Calculate the minimum distance to a node of a certain type
-    global minDistTime
-    start_time = time.time()
-
-    distance = math.inf
-
-    if nodeType in nodeRoadsAndTypes:
-        for node in G.nodes():
-            if G.nodes[node]['roadType'] + G.nodes[node]['nodeType']== nodeType:
-                checkDistance = ((position[0] - G.nodes[node]['pos'][0])**2 + (position[1] - G.nodes[node]['pos'][1])**2)**0.5
-                if checkDistance < distance:
-                    distance = checkDistance
-        end_time = time.time()
-        minDistTime += (end_time - start_time)
-        return distance
-    else:
-        end_time = time.time()
-        minDistTime += (end_time - start_time)
-        return math.inf
-    
-def createNodes(G, node, changeNodeTo, theta, length, newRoadType, newNodeType, weight = 1, intersectRadius=None):
-    global counter
-    global creationCalcs
-    global updateCalcs
-
-    newNode,newPosition = calculateNewPosition(G, node, theta, length)
-    newRoadAndType = newRoadType + newNodeType;
-
-    # Check if the new edge intersects with any existing edge
-    closestIntersection = findClosestIntersection(G, node, newPosition)
-    if closestIntersection:
-        newPosition = closestIntersection
-
-    tooCloseNode = checkProximity(G, newPosition, intersectRadius)
-
-    G.nodes[node]['nodeType'] = changeNodeTo # change the node type of the current node
-
-    newDirection = (newPosition[0] - G.nodes[node]['pos'][0], newPosition[1] - G.nodes[node]['pos'][1]) # calculate the direction of the new edge
-
-    if tooCloseNode:
-        if node != tooCloseNode:
-            boundaryBox = (min(G.nodes[node]['pos'][0], G.nodes[tooCloseNode]['pos'][0]), max(G.nodes[node]['pos'][0], G.nodes[tooCloseNode]['pos'][0]), min(G.nodes[node]['pos'][1], G.nodes[tooCloseNode]['pos'][1]), max(G.nodes[node]['pos'][1], G.nodes[tooCloseNode]['pos'][1]))
-            G.add_edge(node, tooCloseNode,weight=weight, boundaryBox=boundaryBox) # add the new edge to the graph
-    else:
-        G.add_node(newNode, nodeType=newNodeType, pos=newPosition, incEdge=newDirection, roadType = newRoadType) # add the new node to the graph
-        boundaryBox = (min(G.nodes[node]['pos'][0], newPosition[0]), max(G.nodes[node]['pos'][0], newPosition[0]), min(G.nodes[node]['pos'][1], newPosition[1]), max(G.nodes[node]['pos'][1], newPosition[1]))
-        G.add_edge(node, newNode,weight=weight, boundaryBox=boundaryBox) # add the new edge to the graph
-
-
-def generateCity(iterations, grammar, seed=42,intersectRadius=None, plotType="Map", showNodes = False, nodeLabelType = None, edgeLabelType = None, show=True, benchmark=False):
-
-    random.seed(seed)
-    np.random.seed(seed)
-
-    G.add_node(0, nodeType='Start', roadType="m", pos=(0,0), incEdge=(0,1)) # incEdge is the direction of the incoming edge
-    
-    fig, ax = plt.subplots()
-
-    def graphSettings():
-        if showNodes:
-            node_size = 10
         else:
-            node_size = 0
-        if nodeLabelType == "Node Type":
-            with_labels = True
-            labels=nx.get_node_attributes(G, 'nodeType')
-        elif nodeLabelType == "Node Number":
-            with_labels = True
-            labels = {node: node for node in G.nodes()}
-        elif nodeLabelType == "Road Type":
-            with_labels = True
-            labels=nx.get_node_attributes(G, 'roadType')
+            return True
+
+    def findClosestIntersection(self, node, newPosition):
+        newEdgeXMin = min(self.G.nodes[node]['pos'][0], newPosition[0])
+        newEdgeXMax = max(self.G.nodes[node]['pos'][0], newPosition[0])
+        newEdgeYMin = min(self.G.nodes[node]['pos'][1], newPosition[1])
+        newEdgeYMax = max(self.G.nodes[node]['pos'][1], newPosition[1])
+        newEdgeBoundingBox = (newEdgeXMin,newEdgeXMax,newEdgeYMin,newEdgeYMax)
+
+        intersections = []
+        currentPosition = self.G.nodes[node]['pos']
+
+        for edge in self.G.edges():
+            if self.checkBoundaryBoxIntersection(self.G.edges[edge]['boundaryBox'], newEdgeBoundingBox):
+                p1 = self.G.nodes[edge[0]]['pos']
+                p2 = self.G.nodes[edge[1]]['pos']
+                intersection = self.calcIntersectionPoint(p1, p2, currentPosition, newPosition)
+                if intersection:  # If there is an intersection
+                    distance = ((intersection[0] - currentPosition[0])**2 + (intersection[1] - currentPosition[1])**2)**0.5
+                    intersections.append((intersection, distance))
+
+        if intersections:
+            closestIntersection = min(intersections, key=lambda x: x[1])[0]
+            return closestIntersection
         else:
-            with_labels = False
-            labels=None
+            return False
+            # ...
 
-        edges = G.edges()
-        # Create a list of colors based on the weights of the edges
-        edge_colors = ['#ffd747' if G[u][v]['weight'] == 1 else '#e3e3e3' if G[u][v]['weight'] == 0.5 else '#dbdbdb' for u, v in edges]
-        edge_widths = [4 if G[u][v]['weight'] == 1 else 3 if G[u][v]['weight'] == 0.5 else 2 for u, v in edges]
-        edge_widthsBlack = [x + 1 for x in edge_widths]
+    def calcMinDistanceToType(self, position, nodeType):
 
-        pos = nx.get_node_attributes(G, 'pos')
-        nx.draw_networkx_edges(G, pos, edge_color='black', width=edge_widthsBlack, ax=ax)  # Draw edges with outline
-        nx.draw_networkx_edges(G, pos, edge_color=edge_colors, width=edge_widths, ax=ax)  # Draw edges
-        if edgeLabelType == "Edge Weight":
-            edge_labels = nx.get_edge_attributes(G, 'weight')
-            nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, ax=ax)
-        nx.draw_networkx_nodes(G, pos, node_size=node_size, ax=ax)
+        distance = math.inf
 
-        if with_labels:
-            nx.draw_networkx_labels(G, pos, labels=labels, ax=ax)
-        plt.axis('on')  # Turn on the axes
-        plt.grid(True)  # Add a grid
+        if nodeType in self.nodeRoadsAndTypes:
+            for node in self.G.nodes():
+                if self.G.nodes[node]['roadType'] + self.G.nodes[node]['nodeType']== nodeType:
+                    checkDistance = ((position[0] - self.G.nodes[node]['pos'][0])**2 + (position[1] - self.G.nodes[node]['pos'][1])**2)**0.5
+                    if checkDistance < distance:
+                        distance = checkDistance
+            return distance
+        else:
+            return math.inf
 
-    def applyLSystem():
-        nodes = list(G.nodes())  # Create a copy of the nodes
-        for node in nodes:
+    def createNodes(self, node, changeNodeTo, theta, length, newRoadType, newNodeType, weight=1, intersectRadius=None):
 
-            nodeRoadAndType = G.nodes[node]['roadType'] + G.nodes[node]['nodeType']
-            #choose one of the rules based on occurProb
+        newNode,newPosition = self.calculateNewPosition(node, theta, length)
+        newRoadAndType = newRoadType + newNodeType;
 
-            #if there is no rule for nodes of this type, skip this node
-            if nodeRoadAndType not in grammar:
-                continue
-            rules = grammar[nodeRoadAndType]
-            occurProbs = [rule['occurProb'] for rule in rules]
-            #if the sum of the occurProbs is not 1, normalize them
-            if sum(occurProbs) != 1:
-                occurProbs = [prob/sum(occurProbs) for prob in occurProbs]
-            #create a list of numbers from 0 to the length of the rules list
-            ruleIndices = list(range(len(rules)))
-            #randomly select one of the rules based on the occurProbs
-            idealRuleIndex = np.random.choice(ruleIndices, p=occurProbs)
-            #create a random permutation of ruleIndices, but ensure that the idealRuleIndex is in the first position
-            ruleIndices.remove(idealRuleIndex)
-            random.shuffle(ruleIndices)
-            ruleIndices.insert(0,idealRuleIndex)
+        # Check if the new edge intersects with any existing edge
+        closestIntersection = self.findClosestIntersection(node, newPosition)
+        if closestIntersection:
+            newPosition = closestIntersection
 
-            """
-            for ruleIndex in ruleIndices:
-                rule = rules[ruleIndex]
-                #check if the rule can be applied by checking the minDistances
-                if not all([G.nodes[node]['minDistances'][nodeType] >= minDistance for nodeType,minDistance in rule['minDistances'].items()]):
-                    continue #if the rule cannot be applied, skip it
-                else:
-                    break #if the rule can be applied, break out of the loop and apply it
-            """
+        tooCloseNode = self.checkProximity(newPosition, intersectRadius)
 
-            #check if the rule can be applied, by calculating the minDistances to all nodes of the types in the rule
-            for ruleIndex in ruleIndices:
-                rule = rules[ruleIndex]
-                minDistances = {}
-                for nodeType in rule['minDistances']:
-                    minDistances[nodeType] = calcMinDistanceToType(G, G.nodes[node]['pos'], nodeType)
-                if not all([minDistances[nodeType] >= minDistance for nodeType,minDistance in rule['minDistances'].items()]):
+        self.G.nodes[node]['nodeType'] = changeNodeTo # change the node type of the current node
+
+        newDirection = (newPosition[0] - self.G.nodes[node]['pos'][0], newPosition[1] - self.G.nodes[node]['pos'][1]) # calculate the direction of the new edge
+
+        if tooCloseNode:
+            if node != tooCloseNode:
+                boundaryBox = (min(self.G.nodes[node]['pos'][0], self.G.nodes[tooCloseNode]['pos'][0]), max(self.G.nodes[node]['pos'][0], self.G.nodes[tooCloseNode]['pos'][0]), min(self.G.nodes[node]['pos'][1], self.G.nodes[tooCloseNode]['pos'][1]), max(self.G.nodes[node]['pos'][1], self.G.nodes[tooCloseNode]['pos'][1]))
+                self.G.add_edge(node, tooCloseNode,weight=weight, boundaryBox=boundaryBox) # add the new edge to the graph
+        else:
+            self.G.add_node(newNode, nodeType=newNodeType, pos=newPosition, incEdge=newDirection, roadType = newRoadType) # add the new node to the graph
+            boundaryBox = (min(self.G.nodes[node]['pos'][0], newPosition[0]), max(self.G.nodes[node]['pos'][0], newPosition[0]), min(self.G.nodes[node]['pos'][1], newPosition[1]), max(self.G.nodes[node]['pos'][1], newPosition[1]))
+            self.G.add_edge(node, newNode,weight=weight, boundaryBox=boundaryBox) # add the new edge to the graph
+
+    def generateCity(self, iterations, grammar, seed=42, intersectRadius=None, plotType="Map", showNodes=False,
+                     nodeLabelType=None, edgeLabelType=None, show=True):
+
+        random.seed(seed)
+        np.random.seed(seed)
+
+        self.G.add_node(0, nodeType='Start', roadType="m", pos=(0,0), incEdge=(0,1)) # incEdge is the direction of the incoming edge
+        
+        fig, ax = plt.subplots()
+
+        def graphSettings():
+            if showNodes:
+                node_size = 10
+            else:
+                node_size = 0
+            if nodeLabelType == "Node Type":
+                with_labels = True
+                labels=nx.get_node_attributes(self.G, 'nodeType')
+            elif nodeLabelType == "Node Number":
+                with_labels = True
+                labels = {node: node for node in self.G.nodes()}
+            elif nodeLabelType == "Road Type":
+                with_labels = True
+                labels=nx.get_node_attributes(self.G, 'roadType')
+            else:
+                with_labels = False
+                labels=None
+
+            edges = self.G.edges()
+            # Create a list of colors based on the weights of the edges
+            edge_colors = ['#ffd747' if self.G[u][v]['weight'] == 1 else '#e3e3e3' if self.G[u][v]['weight'] == 0.5 else '#dbdbdb' for u, v in edges]
+            edge_widths = [4 if self.G[u][v]['weight'] == 1 else 3 if self.G[u][v]['weight'] == 0.5 else 2 for u, v in edges]
+            edge_widthsBlack = [x + 1 for x in edge_widths]
+
+            pos = nx.get_node_attributes(self.G, 'pos')
+            nx.draw_networkx_edges(self.G, pos, edge_color='black', width=edge_widthsBlack, ax=ax)  # Draw edges with outline
+            nx.draw_networkx_edges(self.G, pos, edge_color=edge_colors, width=edge_widths, ax=ax)  # Draw edges
+            if edgeLabelType == "Edge Weight":
+                edge_labels = nx.get_edge_attributes(self.G, 'weight')
+                nx.draw_networkx_edge_labels(self.G, pos, edge_labels=edge_labels, ax=ax)
+            nx.draw_networkx_nodes(self.G, pos, node_size=node_size, ax=ax)
+
+            if with_labels:
+                nx.draw_networkx_labels(self.G, pos, labels=labels, ax=ax)
+            plt.axis('on')  # Turn on the axes
+            plt.grid(True)  # Add a grid
+
+        def applyLSystem():
+            nodes = list(self.G.nodes())  # Create a copy of the nodes
+            for node in nodes:
+
+                nodeRoadAndType = self.G.nodes[node]['roadType'] + self.G.nodes[node]['nodeType']
+                #choose one of the rules based on occurProb
+
+                #if there is no rule for nodes of this type, skip this node
+                if nodeRoadAndType not in grammar:
                     continue
-                else:
-                    break
+                rules = grammar[nodeRoadAndType]
+                occurProbs = [rule['occurProb'] for rule in rules]
+                #if the sum of the occurProbs is not 1, normalize them
+                if sum(occurProbs) != 1:
+                    occurProbs = [prob/sum(occurProbs) for prob in occurProbs]
+                #create a list of numbers from 0 to the length of the rules list
+                ruleIndices = list(range(len(rules)))
+                #randomly select one of the rules based on the occurProbs
+                idealRuleIndex = np.random.choice(ruleIndices, p=occurProbs)
+                #create a random permutation of ruleIndices, but ensure that the idealRuleIndex is in the first position
+                ruleIndices.remove(idealRuleIndex)
+                random.shuffle(ruleIndices)
+                ruleIndices.insert(0,idealRuleIndex)
+
+                """
+                for ruleIndex in ruleIndices:
+                    rule = rules[ruleIndex]
+                    #check if the rule can be applied by checking the minDistances
+                    if not all([G.nodes[node]['minDistances'][nodeType] >= minDistance for nodeType,minDistance in rule['minDistances'].items()]):
+                        continue #if the rule cannot be applied, skip it
+                    else:
+                        break #if the rule can be applied, break out of the loop and apply it
+                """
+
+                #check if the rule can be applied, by calculating the minDistances to all nodes of the types in the rule
+                for ruleIndex in ruleIndices:
+                    rule = rules[ruleIndex]
+                    minDistances = {}
+                    for nodeType in rule['minDistances']:
+                        minDistances[nodeType] = self.calcMinDistanceToType(self.G.nodes[node]['pos'], nodeType)
+                    if not all([minDistances[nodeType] >= minDistance for nodeType,minDistance in rule['minDistances'].items()]):
+                        continue
+                    else:
+                        break
 
 
-            if not len(rule['thetas']) == len(rule['lengths']) == len(rule['newRoadTypes']) == len(rule['newNodeTypes']):
-                raise Exception("The number of thetas, lengths, newRoadTypes and newNodeTypes must be the same")
-            for i in range(len(rule['thetas'])):
-                if type(rule['thetas'][i]) == list:
-                    theta = getRandomThetaList(rule['thetas'][i][0],rule['thetas'][i][1])
-                else:
-                    theta = getRandomThetaSingle(rule['thetas'][i])
-                
-                if rule['newRoadTypes'][i]=="m":
-                    weight = 1
-                elif rule['newRoadTypes'][i]=="l":
-                    weight = 0.5
-                elif rule['newRoadTypes'][i]=="s":
-                    weight = 0.25
+                if not len(rule['thetas']) == len(rule['lengths']) == len(rule['newRoadTypes']) == len(rule['newNodeTypes']):
+                    raise Exception("The number of thetas, lengths, newRoadTypes and newNodeTypes must be the same")
+                for i in range(len(rule['thetas'])):
+                    if type(rule['thetas'][i]) == list:
+                        theta = self.getRandomThetaList(rule['thetas'][i][0],rule['thetas'][i][1])
+                    else:
+                        theta = self.getRandomThetaSingle(rule['thetas'][i])
+                    
+                    if rule['newRoadTypes'][i]=="m":
+                        weight = 1
+                    elif rule['newRoadTypes'][i]=="l":
+                        weight = 0.5
+                    elif rule['newRoadTypes'][i]=="s":
+                        weight = 0.25
 
-                createNodes(G, node, rule['changeNodeTo'], theta, rule['lengths'][i], rule['newRoadTypes'][i], rule['newNodeTypes'][i], weight=weight, intersectRadius=intersectRadius)
+                    self.createNodes(node, rule['changeNodeTo'], theta, rule['lengths'][i], rule['newRoadTypes'][i], rule['newNodeTypes'][i], weight=weight, intersectRadius=intersectRadius)
 
-    def update(i):
-        print(f"Starting iteration: {i+1}/{iterations}")
-        ax.clear()
-
-        applyLSystem()
-
-        graphSettings()
-
-        """
-        ax.set_xlim([-70, 70])  # Set x-axis limits
-        ax.set_ylim([-70, 70])  # Set y-axis limits
-        """
-        
-
-        # Add a text box displaying the current iteration
-        iteration_text = f"Iteration: {i+1}/{iterations}"
-        ax.text(0.02, 0.95, iteration_text, transform=ax.transAxes, fontsize=14,
-            verticalalignment='top', bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
-
-    if plotType == "Animation":
-        ani = animation.FuncAnimation(fig, update, frames=iterations, repeat=False)
-        plt.show()
-    else:
-        for i in range(iterations):
+        def update(i):
             print(f"Starting iteration: {i+1}/{iterations}")
+            ax.clear()
+
             applyLSystem()
 
-        if plotType == "Map":
             graphSettings()
+
             """
-            #set the axis limits
-            ax.set_xlim([-5,5])
-            ax.set_ylim([-5,5])
+            ax.set_xlim([-70, 70])  # Set x-axis limits
+            ax.set_ylim([-70, 70])  # Set y-axis limits
             """
-            if show:
-                plt.show()
-    
-    if benchmark:
-        print(f"\nTime spent calculating proximities, new positions, min distances and closest intersections: {round(proxTime + newPosTime + closestIntTime + minDistTime)}s")
-        print(f"Time spent calculating proximities: {round(proxTime)}s")
-        print(f"Time spent calculating new positions: {round(newPosTime)}s")
-        print(f"Time spent calculating min distances: {round(minDistTime)}s")
-        print(f"Time spent calculating closest intersections: {round(closestIntTime)}s")
-        print(f"        Of which, time spent calculating intersections: {round(intersectTime)}s")
+            
+
+            # Add a text box displaying the current iteration
+            iteration_text = f"Iteration: {i+1}/{iterations}"
+            ax.text(0.02, 0.95, iteration_text, transform=ax.transAxes, fontsize=14,
+                verticalalignment='top', bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
+
+        if plotType == "Animation":
+            ani = animation.FuncAnimation(fig, update, frames=iterations, repeat=False)
+            plt.show()
+        else:
+            for i in range(iterations):
+                print(f"Starting iteration: {i+1}/{iterations}")
+                applyLSystem()
+
+            if plotType == "Map":
+                graphSettings()
+                """
+                #set the axis limits
+                ax.set_xlim([-5,5])
+                ax.set_ylim([-5,5])
+                """
+                if show:
+                    plt.show()
         
+        #return the graph object
+        return self.G
 
-        print("\nCalculated a total of " + str(counter) + " potential intersection points")
-
-        print("\nCreated a total of " + str(len(G.edges())) + " edges")
-
-    #return the graph object
-    return G
-
-
+# Example of how to use the class from another file:
+# from city_generator_file import CityGenerator
+# cityGen = CityGenerator()
+# result = cityGen.generateCity(inputs)

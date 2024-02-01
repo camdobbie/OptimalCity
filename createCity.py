@@ -1,6 +1,8 @@
-from lSystems import generateCity
 from grammars import grammars
+from lSystems import CityGenerator
 
-generateCity(25, grammars.Organic, seed=2, intersectRadius=0.5, showNodes=False, plotType="Map",nodeLabelType="None", show=True, benchmark=True)
+# Create an instance of the CityGenerator class
+cityGen = CityGenerator()
 
-#generateCity(40, 'ruleGrid', intersectRadius=0.5, showNodes=False, plotType="Map",nodeLabelType="None", show=True, benchmark=True)
+# Call the generateCity method on the instance
+G = cityGen.generateCity(20, grammars.Organic, seed=1, intersectRadius=0.5, showNodes=False, plotType="Map",nodeLabelType="None", show=True)
