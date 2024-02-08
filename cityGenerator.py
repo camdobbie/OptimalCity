@@ -139,14 +139,15 @@ class CityGenerator:
             self.G.add_edge(node, newNode,weight=weight, boundaryBox=boundaryBox) # add the new edge to the graph
 
     def generateCity(self, iterations, grammar, seed=42, intersectRadius=None, plotType="Map", showNodes=False,
-                     nodeLabelType=None, edgeLabelType=None, show=True):
+                     nodeLabelType=None, edgeLabelType=None, complexityPath=None):
 
         random.seed(seed)
         np.random.seed(seed)
 
         self.G.add_node(0, nodeType='Start', roadType="m", pos=(0,0), incEdge=(0,1)) # incEdge is the direction of the incoming edge
         
-        fig, ax = plt.subplots()
+        if plotType == "Animation" or plotType == "Map":
+            fig, ax = plt.subplots()
 
         def graphSettings():
             if showNodes:
@@ -186,6 +187,12 @@ class CityGenerator:
             plt.grid(True)  # Add a grid
 
         def applyLSystem():
+
+            if complexityPath:
+                start_time = time.time()
+                numNodes = len(self.G.nodes())
+
+
             nodes = list(self.G.nodes())  # Create a copy of the nodes
             for node in nodes:
 
@@ -247,6 +254,14 @@ class CityGenerator:
                         weight = 0.25
 
                     self.createNodes(node, rule['changeNodeTo'], theta, rule['lengths'][i], rule['newRoadTypes'][i], rule['newNodeTypes'][i], weight=weight, intersectRadius=intersectRadius)
+                
+            if complexityPath:
+                end_time = time.time()
+                timeTaken = end_time - start_time
+
+                with open(complexityPath, "a") as file:
+                    file.write(f"{numNodes},{timeTaken}\n")
+
 
         def update(i):
             print(f"Starting iteration: {i+1}/{iterations}")
@@ -282,13 +297,9 @@ class CityGenerator:
                 ax.set_xlim([-5,5])
                 ax.set_ylim([-5,5])
                 """
-                if show:
-                    plt.show()
+                
+                plt.show()
         
         #return the graph object
         return self.G
 
-# Example of how to use the class from another file:
-# from city_generator_file import CityGenerator
-# cityGen = CityGenerator()
-# result = cityGen.generateCity(inputs)

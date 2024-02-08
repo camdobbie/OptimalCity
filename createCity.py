@@ -5,4 +5,5 @@ from cityGenerator import CityGenerator
 cityGen = CityGenerator()
 
 # Call the generateCity method on the instance
-G = cityGen.generateCity(20, grammars.Organic, seed=1, intersectRadius=0.5, showNodes=False, plotType="Map",nodeLabelType="None", show=True)
+#G = cityGen.generateCity(120, grammars.Organic, seed=9, intersectRadius=0.5, showNodes=False, plotType="Map",nodeLabelType="None", show=False, complexityPath="statsAndFigs/organicSeed9Complexity.txt")
+G = cityGen.generateCity(100, grammars.Organic, seed=9, intersectRadius=0.5, showNodes=False, plotType="Animation",nodeLabelType="None")
