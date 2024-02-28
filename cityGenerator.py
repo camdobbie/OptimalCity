@@ -21,6 +21,7 @@ class CityGenerator:
         self.nodeTypesGen = ["K","T","B","L"]
 #make nodeRoadsAndTypes a list of all possible combinations of roadTypes and nodeTypesGen
         self.nodeRoadsAndTypes = [roadType + nodeType for roadType in self.roadTypes for nodeType in self.nodeTypesGen]
+        self.roadNumbers = [0]
 
     def getRandomThetaList(self, minimum, maximum):
         theta = random.uniform(minimum, maximum) * random.choice([-1, 1])
@@ -113,7 +114,7 @@ class CityGenerator:
         else:
             return math.inf
 
-    def createNodes(self, node, changeNodeTo, theta, length, newRoadType, newNodeType, weight=1, intersectRadius=None):
+    def createNodes(self, node, changeNodeTo, theta, length, newRoadType, newNodeType, newRoad ,weight=1, intersectRadius=None):
 
         newNode,newPosition = self.calculateNewPosition(node, theta, length)
         newRoadAndType = newRoadType + newNodeType;
@@ -132,11 +133,31 @@ class CityGenerator:
         if tooCloseNode:
             if node != tooCloseNode:
                 boundaryBox = (min(self.G.nodes[node]['pos'][0], self.G.nodes[tooCloseNode]['pos'][0]), max(self.G.nodes[node]['pos'][0], self.G.nodes[tooCloseNode]['pos'][0]), min(self.G.nodes[node]['pos'][1], self.G.nodes[tooCloseNode]['pos'][1]), max(self.G.nodes[node]['pos'][1], self.G.nodes[tooCloseNode]['pos'][1]))
-                self.G.add_edge(node, tooCloseNode,weight=weight, boundaryBox=boundaryBox) # add the new edge to the graph
+
+                if newRoad:
+                    newRoadNumber = self.roadNumbers[-1] + 1
+                else:
+                    newRoadNumber = self.G.nodes[node]['incRoadNumber']
+
+
+                self.G.add_edge(node, tooCloseNode,weight=weight, boundaryBox=boundaryBox, roadNumber=newRoadNumber) # add the new edge to the graph
+                if newRoadNumber not in self.roadNumbers:
+                    self.roadNumbers.append(newRoadNumber)
         else:
-            self.G.add_node(newNode, nodeType=newNodeType, pos=newPosition, incEdge=newDirection, roadType = newRoadType) # add the new node to the graph
+            self.G.add_node(newNode, nodeType=newNodeType, pos=newPosition, incEdge=newDirection, roadType = newRoadType)
             boundaryBox = (min(self.G.nodes[node]['pos'][0], newPosition[0]), max(self.G.nodes[node]['pos'][0], newPosition[0]), min(self.G.nodes[node]['pos'][1], newPosition[1]), max(self.G.nodes[node]['pos'][1], newPosition[1]))
-            self.G.add_edge(node, newNode,weight=weight, boundaryBox=boundaryBox) # add the new edge to the graph
+
+            if newRoad:
+                newRoadNumber = self.roadNumbers[-1] + 1
+            else:
+                newRoadNumber = self.G.nodes[node]['incRoadNumber']
+
+            self.G.add_edge(node, newNode,weight=weight, boundaryBox=boundaryBox, roadNumber=newRoadNumber) # add the new edge to the graph
+            #add the incRoadNumber attribute to the new node
+            self.G.nodes[newNode]['incRoadNumber'] = newRoadNumber
+            #if newRoadNumber is not in the list of roadNumbers, add it
+            if newRoadNumber not in self.roadNumbers:
+                self.roadNumbers.append(newRoadNumber)
 
     def generateCity(self, iterations, grammar, seed=42, intersectRadius=None, plotType="Map", showNodes=False,
                      nodeLabelType=None, edgeLabelType=None, complexityPath=None):
@@ -144,7 +165,7 @@ class CityGenerator:
         random.seed(seed)
         np.random.seed(seed)
 
-        self.G.add_node(0, nodeType='Start', roadType="m", pos=(0,0), incEdge=(0,1)) # incEdge is the direction of the incoming edge
+        self.G.add_node(0, nodeType='Start', roadType="m", pos=(0,0), incEdge=(0,1),incRoadNumber=0) # incEdge is the direction of the incoming edge
         
         if plotType == "Animation" or plotType == "Map":
             fig, ax = plt.subplots()
@@ -179,12 +200,17 @@ class CityGenerator:
             if edgeLabelType == "Edge Weight":
                 edge_labels = nx.get_edge_attributes(self.G, 'weight')
                 nx.draw_networkx_edge_labels(self.G, pos, edge_labels=edge_labels, ax=ax)
+
+            if edgeLabelType == "Road Number":
+                edge_labels = nx.get_edge_attributes(self.G, 'roadNumber')
+                nx.draw_networkx_edge_labels(self.G, pos, edge_labels=edge_labels, ax=ax)
+
             nx.draw_networkx_nodes(self.G, pos, node_size=node_size, ax=ax)
 
             if with_labels:
                 nx.draw_networkx_labels(self.G, pos, labels=labels, ax=ax)
             plt.axis('on')  # Turn on the axes
-            plt.grid(True)  # Add a grid
+            plt.grid(False)  # Add a grid
 
         def applyLSystem():
 
@@ -253,7 +279,7 @@ class CityGenerator:
                     elif rule['newRoadTypes'][i]=="s":
                         weight = 0.25
 
-                    self.createNodes(node, rule['changeNodeTo'], theta, rule['lengths'][i], rule['newRoadTypes'][i], rule['newNodeTypes'][i], weight=weight, intersectRadius=intersectRadius)
+                    self.createNodes(node, rule['changeNodeTo'], theta, rule['lengths'][i], rule['newRoadTypes'][i], rule['newNodeTypes'][i], rule['newRoad'][i] ,weight=weight, intersectRadius=intersectRadius)
                 
             if complexityPath:
                 end_time = time.time()

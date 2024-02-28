@@ -26,6 +26,7 @@ class grammars:
                 "lengths":       [1, 1], 
                 "newRoadTypes":  ['m', 'm'], 
                 "newNodeTypes":  ['L', 'L'], 
+                "newRoad":       [False, False],
                 "minDistances":  {}
             }
         ],
@@ -37,6 +38,7 @@ class grammars:
                 "lengths":       [1], 
                 "newRoadTypes":  ['m'],
                 "newNodeTypes":  ['L'], 
+                "newRoad":       [False],
                 "minDistances":  {}
             },
             {   # A straight road with variation, and a new branch of main road
@@ -46,6 +48,7 @@ class grammars:
                 "lengths":       [1,2], 
                 "newRoadTypes":  ['m','m'],
                 "newNodeTypes":  ['L','L'], 
+                "newRoad":       [False, True],
                 "minDistances":  {"mB":3,"lB":3}
             },
             {   # A straight road with variation, and a new branch of large road
@@ -55,6 +58,7 @@ class grammars:
                 "lengths":       [1,2], 
                 "newRoadTypes":  ['m','l'],
                 "newNodeTypes":  ['L','L'], 
+                "newRoad":       [False, True],
                 "minDistances":  {"mB":3,"lB":3}
             }
 
@@ -67,6 +71,7 @@ class grammars:
                 "lengths":       [1], 
                 "newRoadTypes":  ['l'],
                 "newNodeTypes":  ['L'], 
+                "newRoad":       [False],
                 "minDistances":  {}
             },
             {   # A straight road with variation, and a new branch of large road
@@ -76,6 +81,7 @@ class grammars:
                 "lengths":       [1,2], 
                 "newRoadTypes":  ['l','l'],
                 "newNodeTypes":  ['L','L'], 
+                "newRoad":       [False, True],
                 "minDistances":  {"mB":3,"lB":3}
             },
             {   # A straight road with variation, and a new branch of small road
@@ -85,6 +91,7 @@ class grammars:
                 "lengths":       [1,2], 
                 "newRoadTypes":  ['l','s'],
                 "newNodeTypes":  ['L','L'], 
+                "newRoad":       [False, True],
                 "minDistances":  {"mB":1,"lB":3}
             }
 
@@ -97,6 +104,7 @@ class grammars:
                 "lengths":       [1,2],
                 "newRoadTypes":  ['s','s'],
                 "newNodeTypes":  ['L','L'],
+                "newRoad":       [True, True],
                 "minDistances":  {}
             }
         ],
@@ -112,65 +120,72 @@ class grammars:
                 "lengths":       [1, 1], 
                 "newRoadTypes":  ['m', 'm'], 
                 "newNodeTypes":  ['L', 'L'], 
+                "newRoad":       [False, False],
                 "minDistances":  {}
             }
         ],
         "mL": [
-            {   # Just a straight main road, with slight variation in the angle
+            {   # Just a straight main road
                 "occurProb":     0.1,
                 "changeNodeTo":  "T",
                 "thetas":        [0],
                 "lengths":       [1], 
                 "newRoadTypes":  ['m'],
                 "newNodeTypes":  ['L'], 
+                "newRoad":       [False],
                 "minDistances":  {}
             },
-            {   # A straight road with variation, and a new branch of main road
+            {   # A straight road, and a new branch of main road
                 "occurProb":     0.3,
                 "changeNodeTo":  "B",
                 "thetas":        [0,math.pi/2],
                 "lengths":       [1,1], 
                 "newRoadTypes":  ['m','m'],
                 "newNodeTypes":  ['L','L'], 
+                "newRoad":       [False, True],
                 "minDistances":  {"mB":3,"lB":3}
             },
-            {   # A straight road with variation, and a new branch of large road
+            {   # A straight road, and a new branch of large road
                 "occurProb":     1,
                 "changeNodeTo":  "B",
                 "thetas":        [0,math.pi/2],
                 "lengths":       [1,1], 
                 "newRoadTypes":  ['m','l'],
                 "newNodeTypes":  ['L','L'], 
+                "newRoad":       [False, True],
                 "minDistances":  {"mB":3,"lB":3}
             }
 
         ],
         "lL": [
-            {   # Just a straight large road, with slight variation in the angle
+            {   # Just a straight large road
                 "occurProb":     0.2,
                 "changeNodeTo":  "T",
                 "thetas":        [0],
                 "lengths":       [1], 
                 "newRoadTypes":  ['l'],
                 "newNodeTypes":  ['L'], 
+                "newRoad":       [False],
                 "minDistances":  {}
             },
-            {   # A straight road with variation, and a new branch of large road
+            {   # A straight road, and a new branch of large road
                 "occurProb":     0.8,
                 "changeNodeTo":  "B",
                 "thetas":        [0,math.pi/2],
                 "lengths":       [1,1], 
                 "newRoadTypes":  ['l','l'],
                 "newNodeTypes":  ['L','L'], 
+                "newRoad":       [False, True],
                 "minDistances":  {"mB":3,"lB":3}
             },
-            {   # A straight road with variation, and a new branch of small road
+            {   # A straight road, and a new branch of small road
                 "occurProb":     0.8,
                 "changeNodeTo":  "B",
                 "thetas":        [0,math.pi/2],
                 "lengths":       [1,1], 
                 "newRoadTypes":  ['l','s'],
                 "newNodeTypes":  ['L','L'], 
+                "newRoad":       [False, True],
                 "minDistances":  {"mB":1,"lB":3}
             }
 
@@ -183,8 +198,223 @@ class grammars:
                 "lengths":       [1,1],
                 "newRoadTypes":  ['s','s'],
                 "newNodeTypes":  ['L','L'],
+                "newRoad":       [False, True],
                 "minDistances":  {}
             }
         ],
     }
 
+    Hex = {
+        "mStart": [
+            {
+                "occurProb":     1,
+                "changeNodeTo":  "T",
+                "thetas":        [0, math.pi/3, 2*math.pi/3, math.pi, 4*math.pi/3, 5*math.pi/3],
+                "lengths":       [1, 1, 1, 1, 1, 1], 
+                "newRoadTypes":  ['m', 'm', 'm', 'm', 'm', 'm'], 
+                "newNodeTypes":  ['L', 'L', 'L', 'L', 'L', 'L'], 
+                "newRoad":       [True, True, True, True, True, True],
+                "minDistances":  {}
+            }
+        ],
+        "mL": [
+            {   # Just a straight main road
+                "occurProb":     0.1,
+                "changeNodeTo":  "T",
+                "thetas":        [0],
+                "lengths":       [1], 
+                "newRoadTypes":  ['m'],
+                "newNodeTypes":  ['L'], 
+                "newRoad":       [False],
+                "minDistances":  {}
+            },
+            {   # A straight road, and a new branch of main road
+                "occurProb":     0.3,
+                "changeNodeTo":  "B",
+                "thetas":        [0,math.pi/2],
+                "lengths":       [1,1], 
+                "newRoadTypes":  ['m','m'],
+                "newNodeTypes":  ['L','L'], 
+                "newRoad":       [False, True],
+                "minDistances":  {"mB":3,"lB":3}
+            },
+            {   # A straight road, and a new branch of large road
+                "occurProb":     1,
+                "changeNodeTo":  "B",
+                "thetas":        [0,math.pi/2],
+                "lengths":       [1,1], 
+                "newRoadTypes":  ['m','l'],
+                "newNodeTypes":  ['L','L'], 
+                "newRoad":       [False, True],
+                "minDistances":  {"mB":3,"lB":3}
+            }
+
+        ],
+        "lL": [
+            {   # Just a straight large road
+                "occurProb":     0.2,
+                "changeNodeTo":  "T",
+                "thetas":        [0],
+                "lengths":       [1], 
+                "newRoadTypes":  ['l'],
+                "newNodeTypes":  ['L'], 
+                "newRoad":       [False],
+                "minDistances":  {}
+            },
+            {   # A straight road, and a new branch of large road
+                "occurProb":     0.8,
+                "changeNodeTo":  "B",
+                "thetas":        [0,math.pi/2],
+                "lengths":       [1,1], 
+                "newRoadTypes":  ['l','l'],
+                "newNodeTypes":  ['L','L'], 
+                "newRoad":       [False, True],
+                "minDistances":  {"mB":3,"lB":3}
+            },
+            {   # A straight road, and a new branch of small road
+                "occurProb":     0.8,
+                "changeNodeTo":  "B",
+                "thetas":        [0,math.pi/2],
+                "lengths":       [1,1], 
+                "newRoadTypes":  ['l','s'],
+                "newNodeTypes":  ['L','L'], 
+                "newRoad":       [False, True],
+                "minDistances":  {"mB":1,"lB":3}
+            }
+
+        ],
+        "sL": [
+            {
+                "occurProb":     1,
+                "changeNodeTo":  "B",
+                "thetas":        [0,math.pi/2],
+                "lengths":       [1,1],
+                "newRoadTypes":  ['s','s'],
+                "newNodeTypes":  ['L','L'],
+                "newRoad":       [False, True],
+                "minDistances":  {}
+            }
+        ],
+    }
+
+    Line = {
+        "mStart": [
+            {
+                "occurProb":     1,
+                "changeNodeTo":  "T",
+                "thetas":        [0, math.pi], 
+                "lengths":       [1, 1], 
+                "newRoadTypes":  ['m', 'm'], 
+                "newNodeTypes":  ['L', 'L'], 
+                "newRoad":       [False, False],
+                "minDistances":  {}
+            }
+        ],
+        "mL": [
+            {   # Just a straight main road
+                "occurProb":     0.1,
+                "changeNodeTo":  "T",
+                "thetas":        [0],
+                "lengths":       [1], 
+                "newRoadTypes":  ['m'],
+                "newNodeTypes":  ['L'], 
+                "newRoad":       [False],
+                "minDistances":  {}
+            },
+            {   # A straight road, and a new branch of large road
+                "occurProb":     1,
+                "changeNodeTo":  "B",
+                "thetas":        [0,math.pi/2],
+                "lengths":       [1,8], 
+                "newRoadTypes":  ['m','l'],
+                "newNodeTypes":  ['L','B'], 
+                "newRoad":       [False, True],
+                "minDistances":  {"mB":3,"lB":1}
+            },
+            
+
+        ],
+
+        "mT": [
+            {
+                "occurProb":     1,
+                "changeNodeTo":  "B",
+                "thetas":        [math.pi/2],
+                "lengths":       [1],
+                "newRoadTypes":  ['s'],
+                "newNodeTypes":  ['L'],
+                "newRoad":       [True],
+                "minDistances":  {"mB":1}
+            },
+            {
+                "occurProb":     10,
+                "changeNodeTo":  "B",
+                "thetas":        [],
+                "lengths":       [],
+                "newRoadTypes":  [],
+                "newNodeTypes":  [],
+                "newRoad":       [],
+                "minDistances":  {}
+            }
+        ],
+
+        "lB": [
+            {
+                "occurProb":     1,
+                "changeNodeTo":  "K",
+                "thetas":        [math.pi/2, 3*math.pi/2],
+                "lengths":       [2,2],
+                "newRoadTypes":  ['l','l'],
+                "newNodeTypes":  ['L','L'],
+                "newRoad":       [True,True],
+                "minDistances":  {}
+            }
+        ],
+
+        "lL": [
+            {
+                "occurProb":     1,
+                "changeNodeTo":  "K",
+                "thetas":        [0,math.pi],
+                "lengths":       [1,1],
+                "newRoadTypes":  ['l','l'],
+                "newNodeTypes":  ['L','L'],
+                "newRoad":       [False,False],
+                "minDistances":  {}
+            }
+        ],
+
+        "sL": [
+            {
+                "occurProb":     1,
+                "changeNodeTo":  "K",
+                "thetas":        [0,math.pi/2],
+                "lengths":       [1,1],
+                "newRoadTypes":  ['s','s'],
+                "newNodeTypes":  ['L','L'],
+                "newRoad":       [False,True],
+                "minDistances":  {}
+            },
+            {
+                "occurProb":     2,
+                "changeNodeTo":  "K",
+                "thetas":        [math.pi/2],
+                "lengths":       [1],
+                "newRoadTypes":  ['s'],
+                "newNodeTypes":  ['L'],
+                "newRoad":       [True],
+                "minDistances":  {}
+            },
+            {
+                "occurProb":     3,
+                "changeNodeTo":  "L",
+                "thetas":        [],
+                "lengths":       [],
+                "newRoadTypes":  [],
+                "newNodeTypes":  [],
+                "newRoad":       [],
+                "minDistances":  {}
+            },
+        ],
+        
+    }
