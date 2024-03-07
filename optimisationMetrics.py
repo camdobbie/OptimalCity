@@ -1,5 +1,4 @@
 from grammars import grammars
-from cityGenerator import CityGenerator
 import networkx as nx
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
@@ -8,143 +7,358 @@ import numpy as np
 from scipy.stats import kurtosis
 from matplotlib.colors import ListedColormap
 from matplotlib import colormaps
+import random
+from scipy.spatial import ConvexHull
+from matplotlib.patches import Polygon
 
-# Create an instance of the CityGenerator class
-cityGen = CityGenerator()
+random.seed(42)
 
-G = cityGen.generateCity(30, grammars.Organic, seed=42, intersectRadius=0.5, showNodes=False, plotType=None, nodeLabelType="None")
+def calculateRoadBetweennessCentrality(G):
+    # calculate the shortest path between each pair of nodes in the graph
+    print("Calculating shortest paths...")
+    shortestPaths = dict(nx.all_pairs_shortest_path(G))
+    print("Shortest paths calculated.")
+    # create a dictionary of edges and the number of shortest paths that pass through each edge
+    edgeBetweenness = {} 
 
-def calculateBetweennessAverageCentrality(G):
-    centralityDict = nx.betweenness_centrality(G)
-    averageCentrality = sum(centralityDict.values())/len(centralityDict)
-    return averageCentrality
+    total_nodes = len(shortestPaths)
+    for i, source in enumerate(shortestPaths, start=1):
+        print(f"Processing node {i} of {total_nodes}")
 
-# when generateCity is created, the graph is plotted but not shown. I want to overlay a heatmap of the betweenness centrality of each node on top of the graph
-# I want to use the betweenness centrality of each node to determine the colour of the node in the heatmap
+        for target in shortestPaths[source]:
+            # if the source and target are different nodes
+            if source != target:
+                # get the shortest path between the source and target nodes
+                path = shortestPaths[source][target]
+                # iterate through each edge in the path
+                for i in range(len(path)-1):
+                    # get the edge
+                    edge = (path[i], path[i+1])
+                    # if the edge is not in the dictionary, add it
+                    if edge not in edgeBetweenness:
+                        edgeBetweenness[edge] = 1
+                    # if the edge is in the dictionary, increment the value
+                    else:
+                        edgeBetweenness[edge] += 1
+    # for each possible roadNumber, calculate how many shortest paths pass through that road
+    roadNumbers = set(nx.get_edge_attributes(G, 'roadNumber').values())
+    roadBetweenness = {}
+    for roadNumber in roadNumbers:
+        roadBetweenness[roadNumber] = 0
+        for edge in edgeBetweenness:
+            if G.edges[edge]['roadNumber'] == roadNumber:
+                roadBetweenness[roadNumber] += edgeBetweenness[edge]
 
-def plotHeatmapNodes(G):
-    # Create a dictionary of node centrality values
-    centralityDict = nx.betweenness_centrality(G)
-    # Create a list of the centrality values
-    centralityList = list(centralityDict.values())
-    # Create a list of the nodes in the graph
-    nodeList = list(G.nodes())
-    # Create a list of the x and y coordinates of the nodes
-    xList = [G.nodes[node]['pos'][0] for node in nodeList]
-    yList = [G.nodes[node]['pos'][1] for node in nodeList]
-    # Create a scatter plot of the nodes, with the colour of the nodes determined by the centrality of the node
-    plt.scatter(xList, yList, c=centralityList, cmap='plasma', s=100, alpha=0.5)
-    plt.colorbar()
-    plt.show()
+    # normalise the roadBetweenness values using min-max normalisation
+    maxBetweenness = max(roadBetweenness.values())
+    minBetweenness = min(roadBetweenness.values())
+    for roadNumber in roadBetweenness:
+        roadBetweenness[roadNumber] = (roadBetweenness[roadNumber] - minBetweenness) / (maxBetweenness - minBetweenness)
+    return roadBetweenness
 
-# do the same but plot the betweenness centrality of the edges
-def plotHeatmapEdges(G):
-    # Create a dictionary of edge centrality values
-    centralityDict = nx.edge_betweenness_centrality(G)
-    # Create a list of the centrality values
-    centralityList = list(centralityDict.values())
-    # Convert centralityList to a NumPy array
-    centralityArray = np.array(centralityList)
-    # Create a list of the edges in the graph
+def plotRoadsInOrder(G):
+    # create a list of the edges in G
     edgeList = list(G.edges())
-    # Create a list to hold the lines
+    # create a list to hold the lines
     lines = []
-    # Plot a line of each edge, with the colour of the edge determined by the centrality of the edge
+    # create a list to hold the colours of the lines
+    colours = []
+    # iterate through each edge in G
     for i in range(len(edgeList)):
         edge = edgeList[i]
+        # get the x and y coordinates of the start and end nodes of the edge
         x1 = G.nodes[edge[0]]['pos'][0]
         y1 = G.nodes[edge[0]]['pos'][1]
         x2 = G.nodes[edge[1]]['pos'][0]
         y2 = G.nodes[edge[1]]['pos'][1]
+        # add the start and end coordinates to the lines list
         lines.append([(x1, y1), (x2, y2)])
-    # Create a LineCollection from the lines
-    lc = LineCollection(lines, array=centralityArray, cmap='plasma', alpha=0.5, norm=LogNorm())
-    # Add the LineCollection to the plot
-    plt.gca().add_collection(lc)
-    # Set the limits of the plot to the minimum and maximum x and y values of the nodes in the graph
-    plt.xlim(min([G.nodes[node]['pos'][0] for node in G.nodes()])*1.2, max([G.nodes[node]['pos'][0] for node in G.nodes()])*1.2)
-    plt.ylim(min([G.nodes[node]['pos'][1] for node in G.nodes()])*1.2, max([G.nodes[node]['pos'][1] for node in G.nodes()])*1.2)
-
-
-    # Create a colorbar
+        # get the roadNumber of the edge
+        roadNumber = G.edges[edge]['roadNumber']
+        # add the colour of the edge to the colours list
+        colours.append(roadNumber)
+    # create a LineCollection from the lines
+    lc = LineCollection(lines, cmap='plasma')
+    # set the colours of the lines
+    lc.set_array(np.array(colours))
+    # plot the lines
+    fig, ax = plt.subplots()
+    ax.add_collection(lc)
+    ax.autoscale()
+    ax.margins(0.1)
     plt.colorbar(lc)
     plt.show()
 
-def singleHeadTailBreak(data):
-    #perform head/tail breaks on the data, and output a list of the parts
+def plotRoadsByBetweennessCentrality(G):
+    # calculate the road betweenness centrality
+    roadBetweenness = calculateRoadBetweennessCentrality(G)
+    # create a list of the edges in G
+    edgeList = list(G.edges())
+    # create a list to hold the lines
+    lines = []
+    # create a list to hold the colours of the lines
+    colours = []
+    # iterate through each edge in G
+    for i in range(len(edgeList)):
+        edge = edgeList[i]
+        # get the x and y coordinates of the start and end nodes of the edge
+        x1 = G.nodes[edge[0]]['pos'][0]
+        y1 = G.nodes[edge[0]]['pos'][1]
+        x2 = G.nodes[edge[1]]['pos'][0]
+        y2 = G.nodes[edge[1]]['pos'][1]
+        # add the start and end coordinates to the lines list
+        lines.append([(x1, y1), (x2, y2)])
+        # get the roadNumber of the edge
+        roadNumber = G.edges[edge]['roadNumber']
+        # get the betweenness centrality of the road
+        betweenness = roadBetweenness[roadNumber]
+        # add the betweenness centrality to the colours list
+        colours.append(betweenness)
+    # create a LineCollection from the lines
+    lc = LineCollection(lines, cmap='plasma')
+    # set the colours of the lines
+    lc.set_array(np.array(colours))
+    # plot the lines
+    fig, ax = plt.subplots()
+    ax.add_collection(lc)
+    ax.autoscale()
+    ax.margins(0.1)
+    plt.colorbar(lc)
+    plt.show()
 
-    #sort the data
-    data.sort()
-    #calculate the mean
-    mean = sum(data)/len(data)
-    #split the data on either side of the mean
-    head = [x for x in data if x <= mean]
-    tail = [x for x in data if x > mean]
-    return head, tail
+def singleHeadTailBreak(roadCentralityDict):
+    #sort the dictionary by value in descending order
+    sortedDict = dict(sorted(roadCentralityDict.items(), key=lambda item: item[1]))
+    #calculate the mean value
+    mean = sum(sortedDict.values())/len(sortedDict)
+    #split roadCentralityDict on either side of the mean
+    head = {k: v for k, v in sortedDict.items() if v >= mean}
+    tail = {k: v for k, v in sortedDict.items() if v < mean}
+    return tail, head
 
-def headTailBreaks(data, edgeCentralityDict, G, maxClusters=None, clusters=None, counter=0):
+def headTailBreaks(roadCentralityDict, clusters = None, counter = 0):
+    """function to perform head/tail breaks on the data, and output a list of the parts.
+    the clusters parameter is used to pass the clusters list between recursive calls of the function
+    the output is a list of dictionaries, each containing the roadNumbers and betweenness centrality values of the roads in that cluster"""
     if clusters is None:
         clusters = []
-
-    if maxClusters is not None and counter == maxClusters:
+    #if there is only one road in the dictionary, add it to the clusters list and return the list
+    if len(roadCentralityDict) == 1:
+        clusters.append(roadCentralityDict)
         return clusters
-
-    if len(data) <= 1:
-        for i, cluster in enumerate(clusters):
-            for centrality in cluster:
-                for edge, edgeCentrality in edgeCentralityDict.items():
-                    if edgeCentrality == centrality:
-                        start_node_pos = G.nodes[edge[0]]['pos']
-                        end_node_pos = G.nodes[edge[1]]['pos']
-                        print(f"Cluster: {i+1}, Centrality: {centrality}, Edge: {edge}, Start Position: {start_node_pos}, End Position: {end_node_pos}")
+    #if there are two roads in the dictionary, split the dictionary into two parts and add them to the clusters list
+    elif len(roadCentralityDict) == 2:
+        tail, head = singleHeadTailBreak(roadCentralityDict)
+        clusters.append(tail)
+        clusters.append(head)
         return clusters
+    #if there are more than two roads in the dictionary, split the dictionary into two parts and call the function again on each part
+    else:
+        tail, head = singleHeadTailBreak(roadCentralityDict)
+        clusters.append(tail)
+        return headTailBreaks(head, clusters, counter+1)
 
-    head, tail = singleHeadTailBreak(data)
-    clusters.append(head)
-    return headTailBreaks(tail, edgeCentralityDict, G, maxClusters, clusters, counter+1)
-
-def plotClusteredHeatmapEdges(G, maxClusters=None):
-    # Create a dictionary of edge centrality values
-    centralityDict = nx.edge_betweenness_centrality(G)
-    # Create a list of the centrality values
-    centralityList = list(centralityDict.values())
-    # Create a dictionary of edges and their corresponding centrality values
-    edgeCentralityDict = {edge: centrality for edge, centrality in zip(G.edges(), centralityList)}
-    # Cluster the centrality values
-    clusters = headTailBreaks(centralityList, edgeCentralityDict, G, maxClusters)
-    # Create a dictionary that maps each edge to its cluster number
-    edgeClusterDict = {edge: next((j for j, cluster in enumerate(clusters) if centrality in cluster), 0) for edge, centrality in edgeCentralityDict.items()}
-    # Create a list of the edges in the graph
+def plotRoadsByClusteredBetweennessCentrality(G):
+    # calculate the road betweenness centrality
+    roadBetweenness = calculateRoadBetweennessCentrality(G)
+    # create a list of the edges in G
     edgeList = list(G.edges())
-    # Create a list to hold the lines
+    # create a list to hold the lines
     lines = []
-    # Create a list to hold the colors
-    colors = []
-    # Plot a line of each edge, with the color of the edge determined by the cluster of the centrality of the edge
-    for edge in edgeList:
+    # perform head/tail breaks on the roadBetweenness dictionary
+    clusters = headTailBreaks(roadBetweenness)
+    # create a list of the clusters
+    clusterList = list(clusters)
+    # create a list of the colours of the lines
+    colours = []
+    # iterate through each edge in G
+    for i in range(len(edgeList)):
+        edge = edgeList[i]
+        # get the x and y coordinates of the start and end nodes of the edge
         x1 = G.nodes[edge[0]]['pos'][0]
         y1 = G.nodes[edge[0]]['pos'][1]
         x2 = G.nodes[edge[1]]['pos'][0]
         y2 = G.nodes[edge[1]]['pos'][1]
+        # add the start and end coordinates to the lines list
         lines.append([(x1, y1), (x2, y2)])
-        # Find the cluster of the edge and use it as the color
-        color = edgeClusterDict[edge]
-        colors.append(color)
-    # Generate a list of colors
-    cmap = colormaps.get_cmap('plasma')
-    color_list = [cmap(i/(max(colors)+1)) for i in range(max(colors)+1)]
-
-    # Create a LineCollection from the lines
-    lc = LineCollection(lines, array=colors, cmap=ListedColormap(color_list), alpha=0.5,)
-    # Add the LineCollection to the plot
-    plt.gca().add_collection(lc)
-    # Set the limits of the plot to the minimum and maximum x and y values of the nodes in the graph
-    plt.xlim(min([G.nodes[node]['pos'][0] for node in G.nodes()])*1.2, max([G.nodes[node]['pos'][0] for node in G.nodes()])*1.2)
-    plt.ylim(min([G.nodes[node]['pos'][1] for node in G.nodes()])*1.2, max([G.nodes[node]['pos'][1] for node in G.nodes()])*1.2)
-    # Create a colorbar
+        # get the roadNumber of the edge
+        roadNumber = G.edges[edge]['roadNumber']
+        # iterate through each cluster in the clusterList
+        for j in range(len(clusterList)):
+            cluster = clusterList[j]
+            # if the roadNumber is in the cluster
+            if roadNumber in cluster:
+                # add the index of the cluster to the colours list
+                colours.append(j)
+    # create a LineCollection from the lines
+    lc = LineCollection(lines, cmap='plasma')
+    # set the colours of the lines
+    lc.set_array(np.array(colours))
+    # plot the lines
+    fig, ax = plt.subplots()
+    ax.add_collection(lc)
+    ax.autoscale()
+    ax.margins(0.1)
+    ax.set_aspect('equal')
     plt.colorbar(lc)
     plt.show()
 
-#plotHeatmapEdges(G)
-#plotClusteredHeatmapEdges(G)
-plotClusteredHeatmapEdges(G, maxClusters=5)
+def plotRoadsByClusteredBetweennessCentralityWidths(G):
+    # calculate the road betweenness centrality
+    roadBetweenness = calculateRoadBetweennessCentrality(G)
+    # create a list of the edges in G
+    edgeList = list(G.edges())
+    # create a list to hold the lines
+    lines = []
+    # perform head/tail breaks on the roadBetweenness dictionary
+    clusters = headTailBreaks(roadBetweenness)
+    # create a list of the clusters
+    clusterList = list(clusters)
+    # create a list of the colours of the lines
+    colours = []
+    # create a list of the linewidths of the lines
+    linewidths = []
+    # iterate through each edge in G
+    for i in range(len(edgeList)):
+        edge = edgeList[i]
+        # get the x and y coordinates of the start and end nodes of the edge
+        x1 = G.nodes[edge[0]]['pos'][0]
+        y1 = G.nodes[edge[0]]['pos'][1]
+        x2 = G.nodes[edge[1]]['pos'][0]
+        y2 = G.nodes[edge[1]]['pos'][1]
+        # add the start and end coordinates to the lines list
+        lines.append([(x1, y1), (x2, y2)])
+        # get the roadNumber of the edge
+        roadNumber = G.edges[edge]['roadNumber']
+        # iterate through each cluster in the clusterList
+        for j in range(len(clusterList)):
+            cluster = clusterList[j]
+            # if the roadNumber is in the cluster
+            if roadNumber in cluster:
+                # add the index of the cluster to the colours list
+                colours.append(j)
+                # add the centrality value to the linewidths list
+                linewidths.append(3 ** roadBetweenness[roadNumber])
+
+    # reverse things so that the highest betweenness centrality roads are plotted on top
+    lines = lines[::-1]
+    colours = colours[::-1]
+    linewidths = linewidths[::-1]
+
+    lc = LineCollection(lines, cmap='plasma', linewidths=linewidths)
+    # set the colours of the lines
+    lc.set_array(np.array(colours))
+    # plot the lines
+    fig, ax = plt.subplots()
+    ax.add_collection(lc)
+    ax.autoscale()
+    ax.margins(0.1)
+    ax.set_aspect('equal')
+    #plt.colorbar(lc)
+    plt.show()
+
+def calculateTotalRoadLength(G):
+    totalLength = 0
+    for edge in G.edges():
+        x1 = G.nodes[edge[0]]['pos'][0]
+        y1 = G.nodes[edge[0]]['pos'][1]
+        x2 = G.nodes[edge[1]]['pos'][0]
+        y2 = G.nodes[edge[1]]['pos'][1]
+        length = ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
+        totalLength += length
+    return totalLength
+    
+def calculateRoadDensity(G, maxWidth, maxHeight):
+    totalLength = calculateTotalRoadLength(G)
+    return totalLength/(maxWidth*maxHeight)
+
+"""
+def calculatePopulation(G):
+    totalLength = calculateTotalRoadLength(G)
+    return totalLength * 4000
+
+def calculatePopulationDensity(G, maxWidth, maxHeight):
+    population = calculatePopulation(G)
+    maxWidth = maxWidth / 10
+    maxHeight = maxHeight / 10
+    print(f"Population density: {population/(maxWidth*maxHeight)} people per square km.")
+    return population/(maxWidth*maxHeight)
+"""
+
+def calculatePopulation(G):
+    totalLength = calculateTotalRoadLength(G)
+    return round(totalLength * 67.68)
+
+def calculateConvexHull(G):
+    pos = nx.get_node_attributes(G, 'pos')
+    posList = list(pos.values())
+    hull = ConvexHull(posList)
+    return hull
+
+def calculateCityArea(G):
+    hull = calculateConvexHull(G)
+    area = hull.area
+    return area
+
+def calculatePopulationDensity(G):
+    population = calculatePopulation(G)
+    area = calculateCityArea(G)
+    areaKm = area / 100
+    print(f"Population density: {round(population/areaKm)} people per square km.")
+    return round(population/areaKm)
+
+
+
+def plotCityBlackWithHull(G, showNodes = False, nodeLabelType = None, edgeLabelType = None):
+
+    fig, ax = plt.subplots()  
+    ax.set_aspect('equal')
+
+    if showNodes:
+        node_size = 10
+    else:
+        node_size = 0
+    if nodeLabelType == "Node Type":
+        with_labels = True
+        labels=nx.get_node_attributes(G, 'nodeType')
+    elif nodeLabelType == "Node Number":
+        with_labels = True
+        labels = {node: node for node in G.nodes()}
+    elif nodeLabelType == "Road Type":
+        with_labels = True
+        labels=nx.get_node_attributes(G, 'roadType')
+    else:
+        with_labels = False
+        labels=None
+
+    edges = G.edges()
+    edge_widths = [3 if G[u][v]['weight'] == 1 else 2 if G[u][v]['weight'] == 0.5 else 1 for u, v in edges]
+
+    pos = nx.get_node_attributes(G, 'pos')
+    nx.draw_networkx_edges(G, pos, edge_color='black', width=edge_widths, ax=ax)  # Draw edges with outline
+    if edgeLabelType == "Edge Weight":
+        edge_labels = nx.get_edge_attributes(G, 'weight')
+        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, ax=ax)
+
+    if edgeLabelType == "Road Number":
+        edge_labels = nx.get_edge_attributes(G, 'roadNumber')
+        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, ax=ax)
+
+    nx.draw_networkx_nodes(G, pos, node_size=node_size, ax=ax)
+
+    # Calculate the convex hull
+    hull = calculateConvexHull(G)
+    # Get the vertices of the convex hull
+    hull_points = [pos[i] for i in hull.vertices]
+
+    # Create a Polygon patch
+    hull_patch = Polygon(hull_points, fill=None, edgecolor='red')
+
+    # Add the patch to the Axes
+    ax.add_patch(hull_patch)
+
+    if with_labels:
+        nx.draw_networkx_labels(G, pos, labels=labels, ax=ax)
+    plt.axis('on')  # Turn on the axes
+    plt.grid(False)  # Add a grid
+    plt.show()

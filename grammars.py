@@ -23,6 +23,7 @@ class grammars:
                 "occurProb":     1,
                 "changeNodeTo":  "T",
                 "thetas":        [0, math.pi], 
+                "randDirection": [False, False],
                 "lengths":       [1, 1], 
                 "newRoadTypes":  ['m', 'm'], 
                 "newNodeTypes":  ['L', 'L'], 
@@ -32,30 +33,33 @@ class grammars:
         ],
         "mL": [
             {   # Just a straight main road, with slight variation in the angle
-                "occurProb":     0.1,
+                "occurProb":     1,
                 "changeNodeTo":  "T",
                 "thetas":        [[0,0.2]],
-                "lengths":       [1], 
+                "randDirection": [True],
+                "lengths":       [3], 
                 "newRoadTypes":  ['m'],
                 "newNodeTypes":  ['L'], 
                 "newRoad":       [False],
                 "minDistances":  {}
             },
             {   # A straight road with variation, and a new branch of main road
-                "occurProb":     0.3,
+                "occurProb":     0.5,
                 "changeNodeTo":  "B",
                 "thetas":        [0,[math.pi/5,4*math.pi/5]],
-                "lengths":       [1,2], 
+                "randDirection": [False, True],
+                "lengths":       [3,3], 
                 "newRoadTypes":  ['m','m'],
                 "newNodeTypes":  ['L','L'], 
                 "newRoad":       [False, True],
-                "minDistances":  {"mB":3,"lB":3}
+                "minDistances":  {"mB":5,"lB":3}
             },
             {   # A straight road with variation, and a new branch of large road
                 "occurProb":     1,
                 "changeNodeTo":  "B",
                 "thetas":        [0,[math.pi/5,4*math.pi/5]],
-                "lengths":       [1,2], 
+                "randDirection": [False, True],
+                "lengths":       [3,3], 
                 "newRoadTypes":  ['m','l'],
                 "newNodeTypes":  ['L','L'], 
                 "newRoad":       [False, True],
@@ -68,6 +72,7 @@ class grammars:
                 "occurProb":     0.2,
                 "changeNodeTo":  "T",
                 "thetas":        [[0,0.2]],
+                "randDirection": [True],
                 "lengths":       [1], 
                 "newRoadTypes":  ['l'],
                 "newNodeTypes":  ['L'], 
@@ -78,6 +83,7 @@ class grammars:
                 "occurProb":     0.8,
                 "changeNodeTo":  "B",
                 "thetas":        [0,[math.pi/5,4*math.pi/5]],
+                "randDirection": [False, True],
                 "lengths":       [1,2], 
                 "newRoadTypes":  ['l','l'],
                 "newNodeTypes":  ['L','L'], 
@@ -88,6 +94,7 @@ class grammars:
                 "occurProb":     0.8,
                 "changeNodeTo":  "B",
                 "thetas":        [0,[math.pi/3,2*math.pi/3]],
+                "randDirection": [False, True],
                 "lengths":       [1,2], 
                 "newRoadTypes":  ['l','s'],
                 "newNodeTypes":  ['L','L'], 
@@ -97,14 +104,28 @@ class grammars:
 
         ],
         "sL": [
+            
+
             {
-                "occurProb":     1,
-                "changeNodeTo":  "B",
-                "thetas":        [[1.5,1.6],[-1.6,-1.5]],
-                "lengths":       [1,2],
+                "occurProb":     1.5,
+                "changeNodeTo":  "K",
+                "thetas":        [math.pi/2,[-0.1,0.1]],
+                "randDirection": [True,False],
+                "lengths":       [1,1],
                 "newRoadTypes":  ['s','s'],
                 "newNodeTypes":  ['L','L'],
-                "newRoad":       [True, True],
+                "newRoad":       [True,False],
+                "minDistances":  {}
+            },
+            {
+                "occurProb":     3,
+                "changeNodeTo":  "K",
+                "thetas":        [[-0.3,0.3]],
+                "randDirection": [False],
+                "lengths":       [1],
+                "newRoadTypes":  ['s'],
+                "newNodeTypes":  ['L'],
+                "newRoad":       [True],
                 "minDistances":  {}
             }
         ],
@@ -115,8 +136,9 @@ class grammars:
         "mStart": [
             {
                 "occurProb":     1,
-                "changeNodeTo":  "T",
+                "changeNodeTo":  "K",
                 "thetas":        [0, math.pi], 
+                "randDirection": [False, False],
                 "lengths":       [1, 1], 
                 "newRoadTypes":  ['m', 'm'], 
                 "newNodeTypes":  ['L', 'L'], 
@@ -127,8 +149,9 @@ class grammars:
         "mL": [
             {   # Just a straight main road
                 "occurProb":     0.1,
-                "changeNodeTo":  "T",
+                "changeNodeTo":  "K",
                 "thetas":        [0],
+                "randDirection": [False],
                 "lengths":       [1], 
                 "newRoadTypes":  ['m'],
                 "newNodeTypes":  ['L'], 
@@ -137,8 +160,9 @@ class grammars:
             },
             {   # A straight road, and a new branch of main road
                 "occurProb":     0.3,
-                "changeNodeTo":  "B",
+                "changeNodeTo":  "K",
                 "thetas":        [0,math.pi/2],
+                "randDirection": [False, True],
                 "lengths":       [1,1], 
                 "newRoadTypes":  ['m','m'],
                 "newNodeTypes":  ['L','L'], 
@@ -147,8 +171,9 @@ class grammars:
             },
             {   # A straight road, and a new branch of large road
                 "occurProb":     1,
-                "changeNodeTo":  "B",
+                "changeNodeTo":  "K",
                 "thetas":        [0,math.pi/2],
+                "randDirection": [False, True],
                 "lengths":       [1,1], 
                 "newRoadTypes":  ['m','l'],
                 "newNodeTypes":  ['L','L'], 
@@ -160,8 +185,9 @@ class grammars:
         "lL": [
             {   # Just a straight large road
                 "occurProb":     0.2,
-                "changeNodeTo":  "T",
+                "changeNodeTo":  "K",
                 "thetas":        [0],
+                "randDirection": [False],
                 "lengths":       [1], 
                 "newRoadTypes":  ['l'],
                 "newNodeTypes":  ['L'], 
@@ -170,8 +196,9 @@ class grammars:
             },
             {   # A straight road, and a new branch of large road
                 "occurProb":     0.8,
-                "changeNodeTo":  "B",
+                "changeNodeTo":  "K",
                 "thetas":        [0,math.pi/2],
+                "randDirection": [False, True],
                 "lengths":       [1,1], 
                 "newRoadTypes":  ['l','l'],
                 "newNodeTypes":  ['L','L'], 
@@ -180,8 +207,9 @@ class grammars:
             },
             {   # A straight road, and a new branch of small road
                 "occurProb":     0.8,
-                "changeNodeTo":  "B",
+                "changeNodeTo":  "K",
                 "thetas":        [0,math.pi/2],
+                "randDirection": [False, True],
                 "lengths":       [1,1], 
                 "newRoadTypes":  ['l','s'],
                 "newNodeTypes":  ['L','L'], 
@@ -193,8 +221,9 @@ class grammars:
         "sL": [
             {
                 "occurProb":     1,
-                "changeNodeTo":  "B",
+                "changeNodeTo":  "K",
                 "thetas":        [0,math.pi/2],
+                "randDirection": [False, True],
                 "lengths":       [1,1],
                 "newRoadTypes":  ['s','s'],
                 "newNodeTypes":  ['L','L'],
@@ -208,8 +237,9 @@ class grammars:
         "mStart": [
             {
                 "occurProb":     1,
-                "changeNodeTo":  "T",
+                "changeNodeTo":  "K",
                 "thetas":        [0, math.pi/3, 2*math.pi/3, math.pi, 4*math.pi/3, 5*math.pi/3],
+                "randDirection": [False, False, False, False, False, False],
                 "lengths":       [1, 1, 1, 1, 1, 1], 
                 "newRoadTypes":  ['m', 'm', 'm', 'm', 'm', 'm'], 
                 "newNodeTypes":  ['L', 'L', 'L', 'L', 'L', 'L'], 
@@ -220,8 +250,9 @@ class grammars:
         "mL": [
             {   # Just a straight main road
                 "occurProb":     0.1,
-                "changeNodeTo":  "T",
+                "changeNodeTo":  "K",
                 "thetas":        [0],
+                "randDirection": [False],
                 "lengths":       [1], 
                 "newRoadTypes":  ['m'],
                 "newNodeTypes":  ['L'], 
@@ -231,7 +262,8 @@ class grammars:
             {   # A straight road, and a new branch of main road
                 "occurProb":     0.3,
                 "changeNodeTo":  "B",
-                "thetas":        [0,math.pi/2],
+                "thetas":        [0,2*math.pi/3],
+                "randDirection": [False,True],
                 "lengths":       [1,1], 
                 "newRoadTypes":  ['m','m'],
                 "newNodeTypes":  ['L','L'], 
@@ -241,7 +273,8 @@ class grammars:
             {   # A straight road, and a new branch of large road
                 "occurProb":     1,
                 "changeNodeTo":  "B",
-                "thetas":        [0,math.pi/2],
+                "thetas":        [0,2*math.pi/3],
+                "randDirection": [False,True],
                 "lengths":       [1,1], 
                 "newRoadTypes":  ['m','l'],
                 "newNodeTypes":  ['L','L'], 
@@ -253,8 +286,9 @@ class grammars:
         "lL": [
             {   # Just a straight large road
                 "occurProb":     0.2,
-                "changeNodeTo":  "T",
+                "changeNodeTo":  "K",
                 "thetas":        [0],
+                "randDirection": [False],
                 "lengths":       [1], 
                 "newRoadTypes":  ['l'],
                 "newNodeTypes":  ['L'], 
@@ -265,6 +299,7 @@ class grammars:
                 "occurProb":     0.8,
                 "changeNodeTo":  "B",
                 "thetas":        [0,math.pi/2],
+                "randDirection": [False,True],
                 "lengths":       [1,1], 
                 "newRoadTypes":  ['l','l'],
                 "newNodeTypes":  ['L','L'], 
@@ -275,6 +310,7 @@ class grammars:
                 "occurProb":     0.8,
                 "changeNodeTo":  "B",
                 "thetas":        [0,math.pi/2],
+                "randDirection": [False,True],
                 "lengths":       [1,1], 
                 "newRoadTypes":  ['l','s'],
                 "newNodeTypes":  ['L','L'], 
@@ -288,6 +324,7 @@ class grammars:
                 "occurProb":     1,
                 "changeNodeTo":  "B",
                 "thetas":        [0,math.pi/2],
+                "randDirection": [False,True],
                 "lengths":       [1,1],
                 "newRoadTypes":  ['s','s'],
                 "newNodeTypes":  ['L','L'],
@@ -302,7 +339,8 @@ class grammars:
             {
                 "occurProb":     1,
                 "changeNodeTo":  "T",
-                "thetas":        [0, math.pi], 
+                "thetas":        [0, math.pi],
+                "randDirection": [False,False],
                 "lengths":       [1, 1], 
                 "newRoadTypes":  ['m', 'm'], 
                 "newNodeTypes":  ['L', 'L'], 
@@ -315,6 +353,7 @@ class grammars:
                 "occurProb":     0.1,
                 "changeNodeTo":  "T",
                 "thetas":        [0],
+                "randDirection": [False],
                 "lengths":       [1], 
                 "newRoadTypes":  ['m'],
                 "newNodeTypes":  ['L'], 
@@ -325,6 +364,7 @@ class grammars:
                 "occurProb":     1,
                 "changeNodeTo":  "B",
                 "thetas":        [0,math.pi/2],
+                "randDirection": [False,True],
                 "lengths":       [1,8], 
                 "newRoadTypes":  ['m','l'],
                 "newNodeTypes":  ['L','B'], 
@@ -340,6 +380,7 @@ class grammars:
                 "occurProb":     1,
                 "changeNodeTo":  "B",
                 "thetas":        [math.pi/2],
+                "randDirection": [True],
                 "lengths":       [1],
                 "newRoadTypes":  ['s'],
                 "newNodeTypes":  ['L'],
@@ -350,6 +391,7 @@ class grammars:
                 "occurProb":     10,
                 "changeNodeTo":  "B",
                 "thetas":        [],
+                "randDirection": [],
                 "lengths":       [],
                 "newRoadTypes":  [],
                 "newNodeTypes":  [],
@@ -363,7 +405,8 @@ class grammars:
                 "occurProb":     1,
                 "changeNodeTo":  "K",
                 "thetas":        [math.pi/2, 3*math.pi/2],
-                "lengths":       [2,2],
+                "randDirection": [False, False],
+                "lengths":       [4,4],
                 "newRoadTypes":  ['l','l'],
                 "newNodeTypes":  ['L','L'],
                 "newRoad":       [True,True],
@@ -376,6 +419,7 @@ class grammars:
                 "occurProb":     1,
                 "changeNodeTo":  "K",
                 "thetas":        [0,math.pi],
+                "randDirection": [False,False],
                 "lengths":       [1,1],
                 "newRoadTypes":  ['l','l'],
                 "newNodeTypes":  ['L','L'],
@@ -386,9 +430,10 @@ class grammars:
 
         "sL": [
             {
-                "occurProb":     1,
+                "occurProb":     4,
                 "changeNodeTo":  "K",
                 "thetas":        [0,math.pi/2],
+                "randDirection": [False,True],
                 "lengths":       [1,1],
                 "newRoadTypes":  ['s','s'],
                 "newNodeTypes":  ['L','L'],
@@ -399,6 +444,7 @@ class grammars:
                 "occurProb":     2,
                 "changeNodeTo":  "K",
                 "thetas":        [math.pi/2],
+                "randDirection": [True],
                 "lengths":       [1],
                 "newRoadTypes":  ['s'],
                 "newNodeTypes":  ['L'],
@@ -406,9 +452,10 @@ class grammars:
                 "minDistances":  {}
             },
             {
-                "occurProb":     3,
+                "occurProb":     0.5,
                 "changeNodeTo":  "L",
                 "thetas":        [],
+                "randDirection": [],
                 "lengths":       [],
                 "newRoadTypes":  [],
                 "newNodeTypes":  [],
