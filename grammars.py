@@ -29,7 +29,8 @@ class grammars:
                 "newNodeTypes":  ['L', 'L'], 
                 "newRoad":       [False, False],
                 "minDistances":  {}
-            }
+            },
+            
         ],
         "mL": [
             {   # Just a straight main road, with slight variation in the angle

@@ -10,6 +10,16 @@ from matplotlib import colormaps
 import random
 from scipy.spatial import ConvexHull
 from matplotlib.patches import Polygon
+from scipy.spatial import Delaunay
+from shapely.geometry import GeometryCollection, Polygon, MultiLineString
+from shapely.ops import unary_union, polygonize
+from shapely import geometry
+import matplotlib.patches as patches
+from scipy.spatial import Delaunay
+from shapely.geometry import Point
+from shapely.ops import cascaded_union
+from shapely.geometry import MultiPolygon
+
 
 random.seed(42)
 
@@ -289,27 +299,31 @@ def calculatePopulation(G):
     totalLength = calculateTotalRoadLength(G)
     return round(totalLength * 67.68)
 
+
 def calculateConvexHull(G):
     pos = nx.get_node_attributes(G, 'pos')
     posList = list(pos.values())
     hull = ConvexHull(posList)
     return hull
 
-def calculateCityArea(G):
+def calculateConvexHullArea(G):
     hull = calculateConvexHull(G)
-    area = hull.area
+    pos = nx.get_node_attributes(G, 'pos')
+    hull_points = [pos[i] for i in hull.vertices]
+    polygon = Polygon(hull_points)
+    area = polygon.area
     return area
 
-def calculatePopulationDensity(G):
+def calculateConvexHullPopulationDensity(G):
     population = calculatePopulation(G)
-    area = calculateCityArea(G)
+    area = calculateConvexHullArea(G)
     areaKm = area / 100
-    print(f"Population density: {round(population/areaKm)} people per square km.")
+    print(f"Population density (calculated using the convex hull): {round(population/areaKm)} people per square km.")
     return round(population/areaKm)
 
 
 
-def plotCityBlackWithHull(G, showNodes = False, nodeLabelType = None, edgeLabelType = None):
+def plotCityBlackWithConvexHull(G, showNodes = False, nodeLabelType = None, edgeLabelType = None):
 
     fig, ax = plt.subplots()  
     ax.set_aspect('equal')
@@ -352,10 +366,120 @@ def plotCityBlackWithHull(G, showNodes = False, nodeLabelType = None, edgeLabelT
     hull_points = [pos[i] for i in hull.vertices]
 
     # Create a Polygon patch
-    hull_patch = Polygon(hull_points, fill=None, edgecolor='red')
+    hull_patch = patches.Polygon(hull_points, fill=None, edgecolor='red')
 
     # Add the patch to the Axes
     ax.add_patch(hull_patch)
+
+    if with_labels:
+        nx.draw_networkx_labels(G, pos, labels=labels, ax=ax)
+    plt.axis('on')  # Turn on the axes
+    plt.grid(False)  # Add a grid
+    plt.show()
+
+
+
+def alpha_shape(G, alpha=0.05):
+    """
+    Compute the alpha shape (concave hull) of a set of points.
+    @param G: NetworkX graph.
+    @param alpha: alpha value to influence the gooeyness of the border. Smaller numbers
+                  don't fall inward as much as larger numbers. Too large, and you lose detail.
+    @return: list of (x,y) coordinates
+    """
+    # Get the positions of the nodes
+    pos = nx.get_node_attributes(G, 'pos')
+
+    # Convert the positions to a list of points
+    points = [Point(p) for p in pos.values()]
+
+    if len(points) < 4:
+        # When you have a triangle, there is no sense in computing an alpha shape.
+        return geometry.MultiPoint(list(points)).convex_hull
+
+    coords = np.array([point.coords[0] for point in points])
+    tri = Delaunay(coords)
+    triangles = coords[tri.vertices]
+    a = ((triangles[:,0,0] - triangles[:,1,0]) ** 2 + (triangles[:,0,1] - triangles[:,1,1]) ** 2) ** 0.5
+    b = ((triangles[:,1,0] - triangles[:,2,0]) ** 2 + (triangles[:,1,1] - triangles[:,2,1]) ** 2) ** 0.5
+    c = ((triangles[:,2,0] - triangles[:,0,0]) ** 2 + (triangles[:,2,1] - triangles[:,0,1]) ** 2) ** 0.5
+    s = ( a + b + c ) / 2.0
+    areas = (s*(s-a)*(s-b)*(s-c)) ** 0.5
+    circums = a * b * c / (4.0 * areas)
+    filtered = triangles[circums < (1.0 / alpha)]
+    edge1 = filtered[:,(0,1)]
+    edge2 = filtered[:,(1,2)]
+    edge3 = filtered[:,(2,0)]
+    edge_points = np.unique(np.concatenate((edge1,edge2,edge3)), axis = 0).tolist()
+    m = geometry.MultiLineString(edge_points)
+    triangles = list(polygonize(m))
+    return cascaded_union(triangles), edge_points
+
+def calculateAlphaShapeArea(G, alpha=0.05):
+    polygon, edge_points = alpha_shape(G, alpha)
+    area = polygon.area
+    return area
+
+def calculateAlphaShapePopulationDensity(G, alpha=0.05):
+    population = calculatePopulation(G)
+    area = calculateAlphaShapeArea(G, alpha)
+    areaKm = area / 100
+    print(f"Population density (calculated using the alpha shape): {round(population/areaKm)} people per square km.")
+    return round(population/areaKm)
+
+def plotCityBlackWithAlphaShape(G, alpha=0.05, showNodes = False, nodeLabelType = None, edgeLabelType = None):
+    fig, ax = plt.subplots()  
+    ax.set_aspect('equal')
+
+    if showNodes:
+        node_size = 10
+    else:
+        node_size = 0
+    if nodeLabelType == "Node Type":
+        with_labels = True
+        labels=nx.get_node_attributes(G, 'nodeType')
+    elif nodeLabelType == "Node Number":
+        with_labels = True
+        labels = {node: node for node in G.nodes()}
+    elif nodeLabelType == "Road Type":
+        with_labels = True
+        labels=nx.get_node_attributes(G, 'roadType')
+    else:
+        with_labels = False
+        labels=None
+
+    edges = G.edges()
+    edge_widths = [3 if G[u][v]['weight'] == 1 else 2 if G[u][v]['weight'] == 0.5 else 1 for u, v in edges]
+
+    pos = nx.get_node_attributes(G, 'pos')
+    nx.draw_networkx_edges(G, pos, edge_color='black', width=edge_widths, ax=ax)  # Draw edges with outline
+    if edgeLabelType == "Edge Weight":
+        edge_labels = nx.get_edge_attributes(G, 'weight')
+        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, ax=ax)
+
+    if edgeLabelType == "Road Number":
+        edge_labels = nx.get_edge_attributes(G, 'roadNumber')
+        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, ax=ax)
+
+    nx.draw_networkx_nodes(G, pos, node_size=node_size, ax=ax)
+
+    # Calculate the alpha shape
+    polygon, edge_points = alpha_shape(G, alpha)
+
+    # Ensure the polygon is a MultiPolygon
+    if isinstance(polygon, Polygon):
+        polygon = MultiPolygon([polygon])
+
+    # Iterate over each polygon in the MultiPolygon
+    for poly in polygon.geoms:
+        # Get the vertices of the alpha shape
+        hull_points = list(poly.exterior.coords)
+
+        # Create a Polygon patch
+        hull_patch = patches.Polygon(hull_points, fill=None, edgecolor='red')
+
+        # Add the patch to the Axes
+        ax.add_patch(hull_patch)
 
     if with_labels:
         nx.draw_networkx_labels(G, pos, labels=labels, ax=ax)

@@ -120,6 +120,22 @@ class CityGenerator:
         newNode,newPosition = self.calculateNewPosition(node, theta, length)
         newRoadAndType = newRoadType + newNodeType;
 
+        if maxWidth:
+            if newPosition[0] > maxWidth/2:
+                newNodeType = "BOUNDARY"
+                newPosition = (maxWidth/2, newPosition[1])
+            if newPosition[0] < -maxWidth/2:
+                newNodeType = "BOUNDARY"
+                newPosition = (-maxWidth/2, newPosition[1])
+
+        if maxHeight:
+            if newPosition[1] > maxHeight/2:
+                newNodeType = "BOUNDARY"
+                newPosition = (newPosition[0], maxHeight/2)
+            if newPosition[1] < -maxHeight/2:
+                newNodeType = "BOUNDARY"
+                newPosition = (newPosition[0], -maxHeight/2)
+
         # Check if the new edge intersects with any existing edge
         closestIntersection = self.findClosestIntersection(node, newPosition)
         if closestIntersection:
@@ -147,14 +163,6 @@ class CityGenerator:
                     self.roadNumbers.append(newRoadNumber)
         else:
 
-            if maxWidth:
-                if abs(newPosition[0]) > maxWidth/2:
-                    newNodeType = "BOUNDARY"
-            
-            if maxHeight:
-                if abs(newPosition[1]) > maxHeight/2:
-                    newNodeType = "BOUNDARY"
-
             self.G.add_node(newNode, nodeType=newNodeType, pos=newPosition, incEdge=newDirection, roadType = newRoadType)
             boundaryBox = (min(self.G.nodes[node]['pos'][0], newPosition[0]), max(self.G.nodes[node]['pos'][0], newPosition[0]), min(self.G.nodes[node]['pos'][1], newPosition[1]), max(self.G.nodes[node]['pos'][1], newPosition[1]))
 
@@ -170,7 +178,7 @@ class CityGenerator:
             if newRoadNumber not in self.roadNumbers:
                 self.roadNumbers.append(newRoadNumber)
 
-    def generateCity(self, iterations, grammar, seed=42, intersectRadius=None, maxWidth = None, maxHeight = None, plotType="Map", showNodes=False,
+    def generateCity(self, iterations, grammar, seed=42, intersectRadius=0.5, maxWidth = None, maxHeight = None, plotType="Map", showNodes=False,
                      nodeLabelType=None, edgeLabelType=None, complexityPath=None, maxRoadSegments = None, maxRoadLength=None, population = None):
 
         random.seed(seed)
@@ -459,7 +467,7 @@ class CityGenerator:
             labels=None
 
         edges = G.edges()
-        edge_widths = [3 if G[u][v]['weight'] == 1 else 2 if G[u][v]['weight'] == 0.5 else 1 for u, v in edges]
+        edge_widths = [1.5 if G[u][v]['weight'] == 1 else 1 if G[u][v]['weight'] == 0.5 else 0.5 for u, v in edges]
 
         pos = nx.get_node_attributes(G, 'pos')
         nx.draw_networkx_edges(G, pos, edge_color='black', width=edge_widths, ax=ax)  # Draw edges with outline
