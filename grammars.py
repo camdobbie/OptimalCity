@@ -65,6 +65,17 @@ class grammars:
                 "newNodeTypes":  ['L','L'], 
                 "newRoad":       [False, True],
                 "minDistances":  {"mB":3,"lB":3}
+            },
+            {   # Just a straight main road, with slight variation in the angle
+                "occurProb":     1.5,
+                "changeNodeTo":  "L",
+                "thetas":        [],
+                "randDirection": [],
+                "lengths":       [], 
+                "newRoadTypes":  [],
+                "newNodeTypes":  [], 
+                "newRoad":       [],
+                "minDistances":  {}
             }
 
         ],
@@ -92,7 +103,7 @@ class grammars:
                 "minDistances":  {"mB":3,"lB":3}
             },
             {   # A straight road with variation, and a new branch of small road
-                "occurProb":     0.8,
+                "occurProb":     5,
                 "changeNodeTo":  "B",
                 "thetas":        [0,[math.pi/3,2*math.pi/3]],
                 "randDirection": [False, True],
@@ -108,7 +119,7 @@ class grammars:
             
 
             {
-                "occurProb":     1.5,
+                "occurProb":     3,
                 "changeNodeTo":  "K",
                 "thetas":        [math.pi/2,[-0.1,0.1]],
                 "randDirection": [True,False],

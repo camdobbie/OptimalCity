@@ -178,11 +178,13 @@ class CityGenerator:
             if newRoadNumber not in self.roadNumbers:
                 self.roadNumbers.append(newRoadNumber)
 
-    def generateCity(self, iterations, grammar, seed=42, intersectRadius=0.5, maxWidth = None, maxHeight = None, plotType="Map", showNodes=False,
+    def generateCity(self, iterations, grammar, seed=42, intersectRadius=0.8, maxWidth = None, maxHeight = None, plotType="Map", showNodes=False,
                      nodeLabelType=None, edgeLabelType=None, complexityPath=None, maxRoadSegments = None, maxRoadLength=None, population = None):
 
         random.seed(seed)
         np.random.seed(seed)
+
+        startTime = time.time()
 
         self.G.add_node(0, nodeType='Start', roadType="m", pos=(0,0), incEdge=(0,1),incRoadNumber=0) # incEdge is the direction of the incoming edge
         
@@ -233,11 +235,6 @@ class CityGenerator:
             plt.grid(False)  # Add a grid
 
         def applyLSystem():
-
-            if complexityPath:
-                start_time = time.time()
-                numNodes = len(self.G.nodes())
-
 
             #nodes = list(self.G.nodes())  # Create a copy of the nodes
                 
@@ -315,8 +312,11 @@ class CityGenerator:
                         return
                 
             if complexityPath:
-                end_time = time.time()
-                timeTaken = end_time - start_time
+
+                numNodes = len(self.G.nodes())
+
+                endTime = time.time()
+                timeTaken = endTime - startTime
 
                 with open(complexityPath, "a") as file:
                     file.write(f"{numNodes},{timeTaken}\n")
