@@ -1,6 +1,6 @@
 from grammars import grammars
 from cityGenerator import CityGenerator
-import optimisationMetrics as optim
+import metrics
 import generateMaps as maps
 import pickle
 import matplotlib.pyplot as plt
@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 
 # run for 50 iterations the organic one, assign correct person per m road 
 
-mode = "banana" # "generate" or "plot"
+mode = "pickleBetweenness" # "generate" or "plot"
 
 cityGen = CityGenerator()
 
@@ -61,10 +61,6 @@ if mode == "generate":
                 cityGen.saveCity(G, fileName)
                 cityGen.clearGraph()
 
-    #print(f"Population:          {optim.calculatePopulation(G)}")
-    #print(f"Population density:  {optim.calculatePopulationDensity(G, maxWidth, maxHeight)} people per square kilometre")
-
-
 elif mode == "saveBlackCities":
     seed = 0
     population = 500000
@@ -76,20 +72,24 @@ elif mode == "saveBlackCities":
         G = cityGen.loadCity(fileName)
         #save the figure
         figName = f"statsAndFigs/figs/cityPlots/{grammar}Population{population}seed{seed}Black.pdf"
-        optim.plotCityBlack(G,show=False,savePath=figName)
+        metrics.plotCityBlack(G,show=False,savePath=figName)
 
 
 elif mode == "pickleBetweenness":
     seedList = [0,1,2,3,4]
     grammarList = ["Organic", "Hex", "Grid", "Line"]
-    population = 100000
+    populationDict = {"Line":500000,
+                    "Hex":5000000,
+                    "Grid":5000000,
+                    "Organic":5000000}
 
     for grammar in grammarList:
+        population = populationDict[grammar]
         for seed in seedList:
             fileName = f"savedCities/{grammar}/{population}/{grammar}Population{population}seed{seed}.pkl"
             G = cityGen.loadCity(fileName)
             savePath = f"statsAndFigs/betweennessData/{grammar}Population{population}seed{seed}Betweenness.txt"
-            betweenness = optim.calculateRoadBetweennessCentrality(G,savePath=savePath)
+            betweenness = metrics.calculateRoadBetweennessCentrality(G,savePath=savePath)
 
 elif mode == "plotBetweenness":
     grammar = "Organic"
@@ -100,7 +100,7 @@ elif mode == "plotBetweenness":
     G = cityGen.loadCity(fileName)
     maps.plotRoadsByClusteredBetweennessCentrality(G,betweennessLoadPath=f"statsAndFigs/betweennessData/{grammar}Population{population}seed{seed}Betweenness.txt")
 
-
+"""
 population = 1000000
 seed = 0
 grammar = "Organic"
@@ -109,3 +109,4 @@ G = cityGen.loadCity(fileName)
 alphas = [0.01, 0.05, 0.5]
 for alpha in alphas:
     maps.plotCityBlackWithAlphaShape(G, alpha = alpha, savePath=f"C:/Users/camer/Uni Documents/Year 4/Technical Project/Report/Figures/Alpha{alpha}.pdf", show=False)
+"""

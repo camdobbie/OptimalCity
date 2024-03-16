@@ -2,7 +2,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from shapely.geometry import Polygon, MultiPolygon
-from optimisationMetrics import alpha_shape, headTailBreaks, calculateRoadBetweennessCentrality
+from metrics import alpha_shape, headTailBreaks, calculateRoadBetweennessCentrality
 import pickle
 import numpy as np
 from matplotlib.collections import LineCollection

@@ -6,7 +6,7 @@ import random
 import numpy as np
 import time
 import pickle
-import optimisationMetrics as optim
+import metrics as optim
 
 class CityGenerator:
     def __init__(self):
