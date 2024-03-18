@@ -92,7 +92,7 @@ class ComplexityPlotter:
             # Create a MulticolorPatch for each grammar
             colors = self.colourPalettes[grammar]
             handles.append(MulticolorPatch(colors))
-            labels.append(grammar)
+            labels.append(r'\texttt{' + grammar + '}')
 
         for i, df in enumerate(dfList):
             grammar, seed = dfKeys[i]
@@ -102,7 +102,7 @@ class ComplexityPlotter:
         # Use a custom handler to display multicolor legend patches
         ax.legend(handles, labels, loc='upper left', 
                  handler_map={MulticolorPatch: MulticolorPatchHandler()}, 
-                 bbox_to_anchor=(.125,.875))
+                 bbox_to_anchor=(.125,.875),title='Grammar')
         
         plt.tight_layout()
 
@@ -122,8 +122,13 @@ class ComplexityPlotter:
         ax.set_xlabel('Network size (nodes)')
         ax.set_ylabel('Time taken to \n reach size (seconds)')
 
-        ax.scatter(df['Network size (nodes)'], df['Time taken to reach size (seconds)'], label="Experimental data", marker="x", color = 'black')
-        ax.plot(df['Network size (nodes)'], df['Quadratic fit'], label="Quadratic fit", color=self.colourPalettes[grammar][3], linewidth=2)
+        #set the ticks on the y axis to be every 500 seconds
+        ax.set_yticks(np.arange(0, 3000, 500))
+
+        ax.scatter(df['Network size (nodes)'], df['Time taken to reach size (seconds)'], label="Experimental data", marker="x", color = 'black', s=30)
+        ax.plot(df['Network size (nodes)'], df['Quadratic fit'], label=None, color='black', linewidth=3)
+        ax.plot(df['Network size (nodes)'], df['Quadratic fit'], label="Quadratic fit", color=self.colourPalettes[grammar][1], linewidth=2)
+
 #self.colourPalettes[grammar][0])
 
         plt.legend()
@@ -136,14 +141,14 @@ class ComplexityPlotter:
             self.plotSingleCombination(grammar, population, seed, show=False)
             plt.savefig(f"statsAndFigs/figs/complexityFigs/{grammar}Population{population}seed{seed}Complexity.pdf")
 
-    def saveAllCombninations(self):
+    def saveAllCombinations(self):
         self.plotAllCombinations(show=False)
         plt.savefig(f"statsAndFigs/figs/complexityFigs/AllCombinationsComplexity.pdf")
 
 # Usage
 plotter = ComplexityPlotter()
 
-plotter.plotAllCombinations()
-
-#plotter.saveAllCombninations()
-#plotter.saveSubplots(5000000, 0)
+#plotter.plotAllCombinations()
+#plotter.plotSingleCombination("Hex", 5000000, 0)
+#plotter.saveAllCombinations()
+plotter.saveSubplots(5000000, 0)

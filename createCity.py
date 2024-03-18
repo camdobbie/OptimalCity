@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 
 # run for 50 iterations the organic one, assign correct person per m road 
 
-mode = "pickleBetweenness" # "generate" or "plot"
+mode = "pickleShortestPathsAndBetweenness" # "generate" or "plot"
 
 cityGen = CityGenerator()
 
@@ -75,30 +75,42 @@ elif mode == "saveBlackCities":
         metrics.plotCityBlack(G,show=False,savePath=figName)
 
 
-elif mode == "pickleBetweenness":
+elif mode == "pickleShortestPathsAndBetweenness":
     seedList = [0,1,2,3,4]
     grammarList = ["Organic", "Hex", "Grid", "Line"]
-    populationDict = {"Line":500000,
+    populationDict = {
                     "Hex":5000000,
                     "Grid":5000000,
-                    "Organic":5000000}
+                    "Organic":5000000,
+                    "Line":5000000
+                    }
 
     for grammar in grammarList:
         population = populationDict[grammar]
         for seed in seedList:
             fileName = f"savedCities/{grammar}/{population}/{grammar}Population{population}seed{seed}.pkl"
             G = cityGen.loadCity(fileName)
-            savePath = f"statsAndFigs/betweennessData/{grammar}Population{population}seed{seed}Betweenness.txt"
-            betweenness = metrics.calculateRoadBetweennessCentrality(G,savePath=savePath)
+            shortestPathsSavePath = f"statsAndFigs/shortestPathsData/{grammar}Population{population}seed{seed}ShortestPaths.pkl"
+            betweennessSavePath = f"statsAndFigs/betweennessData/{grammar}Population{population}seed{seed}Betweenness.pkl"
+            betweenness = metrics.calculateRoadBetweennessCentrality(G,shortestPathsSavePath=shortestPathsSavePath, betweennessSavePath=betweennessSavePath)
+
+elif mode == "calculateAverageCircuity":
+    grammar = "Line"
+    population = 100000
+    seed = 1
+    cityPath = f"savedCities/{grammar}/{population}/{grammar}Population{population}seed{seed}.pkl"
+    G = cityGen.loadCity(cityPath)
+    shortestPathsLoadPath = f"statsAndFigs/shortestPathsData/{grammar}Population{population}seed{seed}ShortestPaths.pkl"
+    print(f"Average circuity for {grammar} city (seed {seed}) with population {population}: {metrics.calculateAverageCircuity(G,shortestPathsLoadPath)}")
 
 elif mode == "plotBetweenness":
     grammar = "Organic"
-    population = 100000
+    population = 500000
     seed = 0
 
     fileName = f"savedCities/{grammar}/{population}/{grammar}Population{population}seed{seed}.pkl"
     G = cityGen.loadCity(fileName)
-    maps.plotRoadsByClusteredBetweennessCentrality(G,betweennessLoadPath=f"statsAndFigs/betweennessData/{grammar}Population{population}seed{seed}Betweenness.txt")
+    maps.plotRoadsByClusteredBetweennessCentrality(G,betweennessLoadPath=f"statsAndFigs/betweennessData/{grammar}Population{population}seed{seed}Betweenness.pkl")
 
 """
 population = 1000000

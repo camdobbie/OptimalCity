@@ -23,18 +23,28 @@ from tqdm import tqdm
 import pickle
 
 
-def calculateRoadBetweennessCentrality(G,savePath=None):
+def calculateShortestPaths(G, shortestPathsSavePath=None):
     # calculate the shortest path between each pair of nodes in the graph
     shortestPaths = {}
-    for source in tqdm(G.nodes, desc="Calculating shortest paths"):
+    for source in G.nodes():
+        print(f"Calculating shortest paths from node {source} of {len(G.nodes())}")
         shortestPaths[source] = nx.single_source_shortest_path(G, source)
+
+
+    if shortestPathsSavePath:
+        with open(shortestPathsSavePath, 'wb') as f:
+            pickle.dump(shortestPaths, f)
+
+    return shortestPaths
+
+def calculateRoadBetweennessCentrality(G, shortestPathsSavePath=None, betweennessSavePath=None):
+
+    shortestPaths = calculateShortestPaths(G, shortestPathsSavePath)
+
     # create a dictionary of edges and the number of shortest paths that pass through each edge
     edgeBetweenness = {} 
 
-    total_nodes = len(shortestPaths)
-    for i, source in enumerate(shortestPaths, start=1):
-        print(f"Processing node {i} of {total_nodes}")
-
+    for i, source in enumerate(tqdm(shortestPaths, desc="Processing nodes"), start=1):
         for target in shortestPaths[source]:
             # if the source and target are different nodes
             if source != target:
@@ -65,13 +75,32 @@ def calculateRoadBetweennessCentrality(G,savePath=None):
     for roadNumber in roadBetweenness:
         roadBetweenness[roadNumber] = (roadBetweenness[roadNumber] - minBetweenness) / (maxBetweenness - minBetweenness)
 
-    if savePath:
-        with open(savePath, 'wb') as f:
+    if betweennessSavePath:
+        with open(betweennessSavePath, 'wb') as f:
             pickle.dump(roadBetweenness, f)
 
     return roadBetweenness
 
-
+def calculateAverageCircuity(G,shortestPathsLoadPath):
+    #average circuity is defined as the mean of all circuity values for each pair of nodes in the graph.
+    # for each pair of nodes, circuity is the shortest path length divided by the euclidean distance between the nodes
+    with open(shortestPathsLoadPath, 'rb') as f:
+        shortestPaths = pickle.load(f)
+    circuityList = []
+    for source in tqdm(shortestPaths, desc="Calculating circuity"):
+        for target in shortestPaths[source]:
+            if source != target:
+                path = shortestPaths[source][target]
+                shortestPathLength = len(path) - 1
+                x1 = G.nodes[source]['pos'][0]
+                y1 = G.nodes[source]['pos'][1]
+                x2 = G.nodes[target]['pos'][0]
+                y2 = G.nodes[target]['pos'][1]
+                euclideanDistance = ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
+                circuity = shortestPathLength / euclideanDistance
+                circuityList.append(circuity)
+    averageCircuity = sum(circuityList) / len(circuityList)
+    return averageCircuity
 
 
 
@@ -130,13 +159,7 @@ def calculatePopulation(G):
     return round(totalLength * 154.15)#67.68)
 
 def alpha_shape(G, alpha=0.05):
-    """
-    Compute the alpha shape (concave hull) of a set of points.
-    @param G: NetworkX graph.
-    @param alpha: alpha value to influence the gooeyness of the border. Smaller numbers
-                  don't fall inward as much as larger numbers. Too large, and you lose detail.
-    @return: list of (x,y) coordinates
-    """
+
     # Get the positions of the nodes
     pos = nx.get_node_attributes(G, 'pos')
 
